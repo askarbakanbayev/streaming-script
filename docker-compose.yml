@@ -43,6 +43,7 @@ services:
     container_name: stream-backend
     ports:
       - '6001:6001'
+    env_file: .env
     depends_on:
       - rtsp-server
     networks:
