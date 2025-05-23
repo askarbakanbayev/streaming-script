@@ -54,6 +54,6 @@ export class StreamsController {
   @ApiBody({ description: 'Send Error to Telegram body', type: SendErrorDto })
   @ApiOperation({ summary: 'Отправить ошибку в Telegram' })
   async sendError(@Body() dto: SendErrorDto) {
-    return await this.botService.sendErrorLog(dto.message);
+    return await this.botService.broadcastError(dto.message);
   }
 }

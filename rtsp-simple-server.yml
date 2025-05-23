@@ -1,0 +1,12 @@
+protocols: [tcp, udp, rtmp]
+
+rtmp:
+  enabled: yes
+  listen: :1935
+
+rtsp:
+  protocols: [tcp, udp]
+
+paths:
+  all:
+    source: publisher

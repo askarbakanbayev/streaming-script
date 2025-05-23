@@ -5,14 +5,19 @@ import { Telegraf } from 'telegraf';
 @Injectable()
 export class BotService implements OnModuleInit {
   private bot: Telegraf;
-  private readonly adminChatId: string;
+  private readonly adminChatIds: string[];
 
   constructor(private readonly configService: ConfigService) {
     const token = this.configService.get<string>('BOT_TOKEN');
-    this.adminChatId = this.configService.get<string>('ADMIN_CHAT_ID') || '';
-    if (!token || !this.adminChatId) {
+    const raw = this.configService.get<string>('ADMIN_CHAT_IDS') || '';
+    this.adminChatIds = raw
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean);
+
+    if (!token || this.adminChatIds.length === 0) {
       throw new Error(
-        'BOT_TOKEN or ADMIN_CHAT_ID is not defined in environment variables',
+        'BOT_TOKEN or ADMIN_CHAT_IDS is not defined in environment variables',
       );
     }
     this.bot = new Telegraf(token);
@@ -23,38 +28,39 @@ export class BotService implements OnModuleInit {
   }
 
   private async setup() {
+    // Обработка /start для всех пользователей — и админов, и обычных
     this.bot.start((ctx) => {
-      console.log('Ваш chat ID:', ctx.chat.id);
       ctx.reply(
-        `👋 Привет, ${ctx.from.first_name || 'друг'}!
-
-Ты подключился к системе логирования конвертера RTMP → RTSP.
-
-📡 Здесь ты будешь видеть:
-- Ошибки трансляции
-- Технические сообщения
-- Статусы входящих потоков
-
-⚙️ Для демонстрации используем VLC или ffplay.
-
-Оставайся на связи, логи скоро начнут поступать.`,
+        `👋 Привет, ${ctx.from.first_name || 'друг'}!\n\n` +
+          `Это бот конвертера RTMP → RTSP.\n` +
+          `Все технические уведомления будут приходить администраторам.`,
       );
+      // При желании можно сохранять chat.id в базу, чтобы потом рассылать обновления
+    });
+
+    // Пример команды /stats
+    this.bot.command('stats', (ctx) => {
+      ctx.reply('Здесь будут текущие метрики потоков...');
     });
 
     await this.bot.launch();
+    console.log('Bot started');
   }
 
-  async sendErrorLog(message: string) {
-    try {
-      await this.bot.telegram.sendMessage(
-        this.adminChatId,
-        `🚨 *Ошибка*: ${message}`,
-        {
+  /** Рассылает одно сообщение всем админам */
+  async broadcastError(message: string) {
+    const text = `🚨 *Ошибка конвертера*: ${message}`;
+    for (const chatId of this.adminChatIds) {
+      try {
+        await this.bot.telegram.sendMessage(chatId, text, {
           parse_mode: 'Markdown',
-        },
-      );
-    } catch (error) {
-      console.error('Ошибка отправки сообщения в Telegram:', error);
+        });
+      } catch (err) {
+        console.error(
+          `Не удалось отправить сообщение администратору ${chatId}:`,
+          err,
+        );
+      }
     }
   }
 }

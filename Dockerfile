@@ -1,17 +1,24 @@
-# Dockerfile
-FROM node:20-alpine
+# Используем самую свежую версию Node.js (alpine)
+FROM node:current-alpine
 
-# Install FFmpeg
+# Устанавливаем FFmpeg
 RUN apk add --no-cache ffmpeg
 
+# Создаём рабочую директорию
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install
+# Копируем и устанавливаем зависимости через Yarn
+COPY package.json yarn.lock ./
+RUN yarn install
 
+# Копируем остальные файлы проекта
 COPY . .
 
-RUN npm run build
+# Собираем проект
+RUN yarn build
 
-EXPOSE 3000
+# Открываем порт
+EXPOSE 6001
+
+# Запускаем приложение
 CMD ["node", "dist/main"]

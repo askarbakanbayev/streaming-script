@@ -1,21 +1,18 @@
 version: '3.9'
 
 services:
-  rtmp-server:
-    image: alfg/nginx-rtmp
-    container_name: rtmp-server
-    ports:
-      - '1935:1935' # RTMP
-      - '8080:80' # Web UI
-    restart: always
-
   rtsp-server:
-    image: aler9/rtsp-simple-server
+    image: aler9/rtsp-simple-server:latest
     container_name: rtsp-server
     ports:
       - '8554:8554' # RTSP
       - '8000:8000/udp' # RTP (optional)
+    volumes:
+      # Если нужно подменить конфиг, иначе сервер запустится с дефолтным
+      - ./rtsp-simple-server.yml:/rtsp-simple-server.yml:ro
     restart: always
+    networks:
+      - streamnet
 
   backend:
     build:
@@ -23,4 +20,20 @@ services:
       dockerfile: Dockerfile
     container_name: stream-backend
     ports:
-      - '3000:3000'
+      - '6001:6001' # ваш NestJS API
+    volumes:
+      - ./logs:/app/logs # сюда ffmpeg будет писать логи потоков
+    depends_on:
+      - rtsp-server
+    environment:
+      # адрес вашего RTSP-сервера внутри Docker-сети
+      RTSP_BASE_URL: rtsp://rtsp-server:8554
+        - BOT_TOKEN=${BOT_TOKEN}
+        - ADMIN_CHAT_ID=${ADMIN_CHAT_ID}
+    restart: always
+    networks:
+      - streamnet
+
+networks:
+  streamnet:
+    driver: bridge
