@@ -6,6 +6,7 @@ import * as path from 'path';
 import { StreamEntity } from './entities/streaming.entity';
 import { StreamSocketsService } from 'src/stream-sockets/stream-sockets.service';
 import { GpsService } from 'src/gps/gps.service';
+import { SnapshotsService } from 'src/snapshots/snapshots.service';
 
 @Injectable()
 export class StreamsService implements OnModuleDestroy {
@@ -16,6 +17,7 @@ export class StreamsService implements OnModuleDestroy {
   constructor(
     private readonly socketsService: StreamSocketsService,
     private readonly gpsService: GpsService,
+    private readonly snapshotService: SnapshotsService,
   ) {
     setInterval(() => this.healthCheckStreams(), 10000);
   }
@@ -67,6 +69,8 @@ export class StreamsService implements OnModuleDestroy {
       logPath,
       restartAttempts: 0,
     };
+
+    this.snapshotService.startSnapshots(stream.id, rtspUrl);
 
     ffmpeg.on('spawn', () => {
       stream.status = 'running';
@@ -204,6 +208,8 @@ export class StreamsService implements OnModuleDestroy {
       status: 'stopped',
       timestamp: new Date().toISOString(),
     });
+
+    this.snapshotService.stopSnapshots(id);
 
     return true;
   }
