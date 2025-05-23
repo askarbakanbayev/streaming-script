@@ -7,6 +7,7 @@ import {
   Delete,
   HttpException,
   HttpStatus,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,13 +20,17 @@ import { StreamsService } from './streaming.service';
 import { StreamDto } from './dto/stream.dto';
 import { BotService } from 'src/bot/bot.service';
 import { SendErrorDto } from './dto/send-error.dto';
+import { createReadStream, existsSync } from 'fs';
+import { join } from 'path';
+import { Response } from 'express';
 
 @ApiTags('Streams')
 @Controller('streams')
 export class StreamsController {
   constructor(
     private readonly streamsService: StreamsService,
-    private readonly botService: BotService, // Внедряем
+    private readonly botService: BotService,
+    s,
   ) {}
 
   @Post('notify')
@@ -44,6 +49,28 @@ export class StreamsController {
   @ApiResponse({ status: 201, description: 'Conversion started' })
   notifyIncomingStream(@Body() body: { streamKey: string }) {
     return this.streamsService.startStream(body.streamKey);
+  }
+
+  @Get(':id/logs/download')
+  @ApiOperation({ summary: 'Download the log file for a stream' })
+  @ApiParam({ name: 'id', description: 'Stream ID' })
+  @ApiResponse({ status: 200, description: 'Log file as download' })
+  @ApiResponse({ status: 404, description: 'Log file not found' })
+  downloadLog(@Param('id') id: string, @Res() res: Response) {
+    const logPath = join(process.cwd(), `logs/stream-${id}.log`);
+
+    if (!existsSync(logPath)) {
+      throw new HttpException('Log file not found', HttpStatus.NOT_FOUND);
+    }
+
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="stream-${id}.log"`,
+    );
+    res.setHeader('Content-Type', 'text/plain');
+
+    const fileStream = createReadStream(logPath);
+    fileStream.pipe(res);
   }
 
   @Get()
