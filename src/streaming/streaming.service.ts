@@ -55,7 +55,7 @@ export class StreamsService implements OnModuleDestroy {
       ffmpegArgs.push('-b:v', dto.videoBitrate);
     }
 
-    ffmpegArgs.push('-f', 'flv', `rtmp://rtsp-server:1935/live/${id}`);
+    ffmpegArgs.push('-f', 'flv', `rtmp://rtsp-server:1935/${id}`);
 
     const ffmpeg: ChildProcessWithoutNullStreams = spawn('ffmpeg', ffmpegArgs);
 
