@@ -9,6 +9,7 @@ import { SnapshotsService } from 'src/snapshots/snapshots.service';
 import { StreamHealthService } from './stream-health.service';
 import { BotService } from 'src/bot/bot.service';
 import { CreateStreamDto } from './dto/create-streaming.dto';
+import { PrismaService } from 'src/shared/prisma/prisma.service';
 
 @Injectable()
 export class StreamsService implements OnModuleDestroy {
@@ -21,11 +22,12 @@ export class StreamsService implements OnModuleDestroy {
     private readonly snapshotService: SnapshotsService,
     private readonly streamHealthService: StreamHealthService,
     private readonly botService: BotService,
+    private readonly prisma: PrismaService,
   ) {
     setInterval(() => this.healthCheckStreams(), 10000);
   }
 
-  startStream(dto: CreateStreamDto): StreamEntity {
+  async startStream(dto: CreateStreamDto): Promise<StreamEntity> {
     const id = dto.name;
     const rtmpUrl = dto.rtmpUrl;
     const rtspUrl = `${this.rtspBase}/${id}`;
@@ -34,15 +36,13 @@ export class StreamsService implements OnModuleDestroy {
 
     const ffmpegArgs: string[] = ['-re', '-i', rtmpUrl];
 
-    // Video settings
     ffmpegArgs.push('-vf', `scale=${dto.resolution ?? '1280:720'}`);
-    ffmpegArgs.push('-r', String(dto.fps ?? 30)); // FPS
+    ffmpegArgs.push('-r', String(dto.fps ?? 30));
     ffmpegArgs.push('-c:v', 'libx264');
     ffmpegArgs.push('-preset', 'fast');
 
-    // Audio settings
     if (dto.disableAudio) {
-      ffmpegArgs.push('-an'); // Disable audio
+      ffmpegArgs.push('-an');
     } else {
       ffmpegArgs.push('-c:a', 'aac');
       if (dto.audioBitrate) {
@@ -50,7 +50,6 @@ export class StreamsService implements OnModuleDestroy {
       }
     }
 
-    // Bitrate
     if (dto.videoBitrate) {
       ffmpegArgs.push('-b:v', dto.videoBitrate);
     }
@@ -73,7 +72,18 @@ export class StreamsService implements OnModuleDestroy {
       restartAttempts: 0,
     };
 
-    // остальная логика без изменений
+    await this.prisma.stream.create({
+      data: {
+        id,
+        name: id,
+        rtmpUrl,
+        rtspUrl,
+        status: 'starting',
+        logPath,
+        restartAttempts: 0,
+      },
+    });
+
     this.snapshotService.startSnapshots(id, rtspUrl);
 
     ffmpeg.on('spawn', async () => {
@@ -244,7 +254,7 @@ export class StreamsService implements OnModuleDestroy {
       status: stream.status,
       logPath: stream.logPath,
       restartAttempts: stream.restartAttempts,
-      startTime: stream.startTime, // Добавим ниже
+      startTime: stream.startTime,
     };
   }
 
