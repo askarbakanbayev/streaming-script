@@ -9,4 +9,5 @@ export interface StreamEntity {
   process: any;
   logPath: string;
   restartAttempts: number;
+  startTime?: string;
 }

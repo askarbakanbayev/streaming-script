@@ -16,7 +16,6 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { StreamsService } from './streaming.service';
-import { CreateStreamDto } from './dto/create-streaming.dto';
 import { StreamDto } from './dto/stream.dto';
 import { BotService } from 'src/bot/bot.service';
 import { SendErrorDto } from './dto/send-error.dto';
@@ -82,6 +81,23 @@ export class StreamsController {
       throw new HttpException('Log not found', HttpStatus.NOT_FOUND);
     }
     return log;
+  }
+
+  @Get(':id/metadata')
+  @ApiOperation({ summary: 'Get metadata for a stream' })
+  @ApiParam({ name: 'id', description: 'Stream ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Stream metadata',
+    type: StreamDto,
+  })
+  @ApiResponse({ status: 404, description: 'Stream not found' })
+  getMetadata(@Param('id') id: string) {
+    const metadata = this.streamsService.getMetadata(id);
+    if (!metadata) {
+      throw new HttpException('Stream not found', HttpStatus.NOT_FOUND);
+    }
+    return metadata;
   }
 
   @Post('send-error')
