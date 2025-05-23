@@ -5,6 +5,21 @@ networks:
     driver: bridge
 
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-stream-db
+    restart: always
+    environment:
+      POSTGRES_DB: streaming_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    networks:
+      - streamnet
+
   rtsp-server:
     image: bluenviron/mediamtx:latest
     container_name: rtsp-server
@@ -32,7 +47,7 @@ services:
       -f flv rtmp://rtsp-server:1935/stream
     networks:
       - streamnet
-    restart: 'unless-stopped'
+    restart: unless-stopped
 
   backend:
     build:
@@ -43,7 +58,11 @@ services:
       - '6001:6001'
     env_file: .env
     depends_on:
+      - postgres
       - rtsp-server
     networks:
       - streamnet
     restart: always
+
+volumes:
+  postgres_data:

@@ -7,10 +7,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { StreamSocketsModule } from './stream-sockets/stream-sockets.module';
 import { GpsModule } from './gps/gps.module';
 import { SnapshotsModule } from './snapshots/snapshots.module';
+import { SharedModule } from './shared/shared.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    SharedModule,
     StreamsModule,
     BotModule,
     StreamSocketsModule,
