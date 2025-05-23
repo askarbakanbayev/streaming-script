@@ -1,5 +1,4 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -16,30 +15,17 @@ export class StreamsService implements OnModuleDestroy {
 
   constructor(
     private readonly socketsService: StreamSocketsService,
-    private readonly gpsService: GpsService,
     private readonly snapshotService: SnapshotsService,
   ) {
     setInterval(() => this.healthCheckStreams(), 10000);
   }
 
-  startStream(name: string, rtmpUrl: string): StreamEntity {
-    const id = uuidv4();
-    const rtspUrl = `${this.rtspBase}/stream-${id}`;
-    const logPath = path.resolve(`logs/stream-${id}.log`);
+  startStream(streamKey: string): StreamEntity {
+    const id = streamKey;
+    const rtmpUrl = `rtmp://localhost:1935/${streamKey}`;
+    const rtspUrl = `${this.rtspBase}/${streamKey}`;
+    const logPath = path.resolve(`logs/stream-${streamKey}.log`);
     const logStream = fs.createWriteStream(logPath, { flags: 'a' });
-
-    // Попробуем сразу отправить GPS, если он уже есть
-    const gps = this.gpsService.findOne(id);
-    if (gps) {
-      this.socketsService.emitGpsPosition({
-        streamId: id,
-        lat: gps.lat,
-        lng: gps.lng,
-        altitude: gps.altitude,
-        speed: gps.speed,
-        timestamp: new Date().toISOString(),
-      });
-    }
 
     const ffmpeg: ChildProcessWithoutNullStreams = spawn('ffmpeg', [
       '-re',
@@ -61,7 +47,7 @@ export class StreamsService implements OnModuleDestroy {
 
     const stream: StreamEntity = {
       id,
-      name,
+      name: streamKey,
       rtmpUrl,
       rtspUrl,
       status: 'starting',
@@ -70,11 +56,10 @@ export class StreamsService implements OnModuleDestroy {
       restartAttempts: 0,
     };
 
-    this.snapshotService.startSnapshots(stream.id, rtspUrl);
+    this.snapshotService.startSnapshots(id, rtspUrl);
 
     ffmpeg.on('spawn', () => {
       stream.status = 'running';
-      stream.restartAttempts = 0;
       this.socketsService.emitStreamStatus({
         id: stream.id,
         name: stream.name,
@@ -83,34 +68,24 @@ export class StreamsService implements OnModuleDestroy {
       });
     });
 
-    ffmpeg.on('exit', (code) => {
-      if (stream.status !== 'stopped') {
-        stream.status = 'error';
-        stream.process = null;
-
-        const msg = `[!] Поток ${stream.name} завершился неожиданно (код ${code})`;
-        console.warn(msg);
-
-        this.socketsService.emitStreamError({
-          id: stream.id,
-          name: stream.name,
-          message: msg,
-          timestamp: new Date().toISOString(),
-        });
-      }
-    });
-
-    ffmpeg.on('error', (error) => {
+    ffmpeg.on('exit', () => {
       stream.status = 'error';
       stream.process = null;
-
-      const msg = `[❌] Ошибка процесса ffmpeg потока ${stream.name}`;
-      console.error(msg);
-
       this.socketsService.emitStreamError({
         id: stream.id,
         name: stream.name,
-        message: msg,
+        message: `[x] ffmpeg exited unexpectedly`,
+        timestamp: new Date().toISOString(),
+      });
+    });
+
+    ffmpeg.on('error', () => {
+      stream.status = 'error';
+      stream.process = null;
+      this.socketsService.emitStreamError({
+        id: stream.id,
+        name: stream.name,
+        message: `[x] ffmpeg process error`,
         timestamp: new Date().toISOString(),
       });
     });

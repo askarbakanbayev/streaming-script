@@ -1,4 +1,4 @@
-# Используем самую свежую версию Node.js (alpine)
+# Используем свежий Node.js на Alpine
 FROM node:current-alpine
 
 # Устанавливаем FFmpeg
@@ -7,11 +7,13 @@ RUN apk add --no-cache ffmpeg
 # Создаём рабочую директорию
 WORKDIR /app
 
-# Копируем и устанавливаем зависимости через Yarn
+# Копируем package.json и lock файл
 COPY package.json yarn.lock ./
-RUN yarn install
 
-# Копируем остальные файлы проекта
+# Устанавливаем зависимости
+RUN yarn install --frozen-lockfile
+
+# Копируем остальной код
 COPY . .
 
 # Собираем проект
@@ -20,5 +22,5 @@ RUN yarn build
 # Открываем порт
 EXPOSE 6001
 
-# Запускаем приложение
+# Стартуем
 CMD ["node", "dist/main"]

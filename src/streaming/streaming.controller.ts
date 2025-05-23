@@ -29,16 +29,22 @@ export class StreamsController {
     private readonly botService: BotService, // Внедряем
   ) {}
 
-  @Post()
-  @ApiOperation({ summary: 'Start a new RTMP → RTSP stream' })
-  @ApiResponse({
-    status: 201,
-    description: 'Stream started successfully',
-    type: Object,
+  @Post('notify')
+  @ApiOperation({
+    summary: 'Notify server of incoming RTMP stream (auto convert to RTSP)',
   })
-  @ApiBody({ type: CreateStreamDto })
-  create(@Body() dto: CreateStreamDto) {
-    return this.streamsService.startStream(dto.name, dto.rtmpUrl);
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        streamKey: { type: 'string' },
+      },
+      required: ['streamKey'],
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Conversion started' })
+  notifyIncomingStream(@Body() body: { streamKey: string }) {
+    return this.streamsService.startStream(body.streamKey);
   }
 
   @Get()

@@ -1,34 +1,39 @@
 #!/bin/bash
 
-echo "🔍 Проверка наличия Homebrew..."
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo -e "${YELLOW}🔍 Проверка наличия Homebrew...${NC}"
 if ! command -v brew &> /dev/null; then
-    echo "🔧 Установка Homebrew..."
+    echo -e "${YELLOW}🔧 Установка Homebrew...${NC}"
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 else
-    echo "✅ Homebrew уже установлен"
+    echo -e "${GREEN}✅ Homebrew уже установлен${NC}"
 fi
 
-echo "🔍 Проверка наличия FFmpeg..."
+echo -e "${YELLOW}🔍 Проверка наличия FFmpeg...${NC}"
 if ! command -v ffmpeg &> /dev/null; then
-    echo "🔧 Установка FFmpeg через Homebrew..."
+    echo -e "${YELLOW}🔧 Установка FFmpeg через Homebrew...${NC}"
     brew install ffmpeg
 else
-    echo "✅ FFmpeg уже установлен"
+    echo -e "${GREEN}✅ FFmpeg уже установлен${NC}"
 fi
 
-echo "🔍 Проверка наличия Docker..."
+echo -e "${YELLOW}🔍 Проверка наличия Docker...${NC}"
 if ! command -v docker &> /dev/null; then
-    echo "❌ Docker не найден. Пожалуйста установи Docker с https://www.docker.com/products/docker-desktop"
+    echo -e "${YELLOW}❌ Docker не найден. Пожалуйста установи Docker с https://www.docker.com/products/docker-desktop${NC}"
     exit 1
 fi
 
-echo "🐳 Запуск локального RTMP-сервера на порту 1935..."
-docker run -d --rm --name local-rtmp -p 1935:1935 -p 8080:80 alfg/nginx-rtmp
+echo -e "${YELLOW}🐳 Запуск локального RTMP-сервера на порту 1935...${NC}"
+docker rm -f local-rtmp &>/dev/null
+docker run -d --name local-rtmp -p 1935:1935 -p 8080:80 alfg/nginx-rtmp
+sleep 3
 
-sleep 2
-
-echo "📡 Генерация тестового RTMP-потока через FFmpeg..."
+echo -e "${YELLOW}📡 Генерация беззвучного RTMP-потока через FFmpeg...${NC}"
 ffmpeg -re -f lavfi -i testsrc=size=640x360:rate=30 \
-       -f lavfi -i sine=frequency=1000 \
-       -c:v libx264 -c:a aac \
-       -f flv rtmp://localhost/live/stream
+       -f lavfi -i anullsrc=channel_layout=mono:sample_rate=44100 \
+       -c:v libx264 -c:a aac -strict -2 \
+       -f flv rtmp://localhost:1935/stream
