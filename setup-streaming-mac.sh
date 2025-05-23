@@ -37,4 +37,4 @@ echo -e "${YELLOW}📡 Стрим видео car.mp4 через FFmpeg...${NC}"
 ffmpeg -re -i ./videos/car.mp4 \
   -c:v libx264 -preset veryfast -tune zerolatency \
   -c:a aac \
-  -f flv rtmp://localhost:1935/live/stream
+  -f flv rtmp://localhost:1935/stream
