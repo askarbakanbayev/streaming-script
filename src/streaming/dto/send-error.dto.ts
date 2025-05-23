@@ -1,4 +1,3 @@
-// src/streams/dto/send-error.dto.ts
 import { IsString, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
