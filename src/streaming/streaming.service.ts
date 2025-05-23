@@ -8,6 +8,7 @@ import { GpsService } from 'src/gps/gps.service';
 import { SnapshotsService } from 'src/snapshots/snapshots.service';
 import { StreamHealthService } from './stream-health.service';
 import { BotService } from 'src/bot/bot.service';
+import { CreateStreamDto } from './dto/create-streaming.dto';
 
 @Injectable()
 export class StreamsService implements OnModuleDestroy {
@@ -24,34 +25,46 @@ export class StreamsService implements OnModuleDestroy {
     setInterval(() => this.healthCheckStreams(), 10000);
   }
 
-  startStream(streamKey: string): StreamEntity {
-    const id = streamKey;
-    const rtmpUrl = `rtmp://localhost:1935/${streamKey}`;
-    const rtspUrl = `${this.rtspBase}/${streamKey}`;
-    const logPath = path.resolve(`logs/stream-${streamKey}.log`);
+  startStream(dto: CreateStreamDto): StreamEntity {
+    const id = dto.name;
+    const rtmpUrl = dto.rtmpUrl;
+    const rtspUrl = `${this.rtspBase}/${id}`;
+    const logPath = path.resolve(`logs/stream-${id}.log`);
     const logStream = fs.createWriteStream(logPath, { flags: 'a' });
 
-    const ffmpeg: ChildProcessWithoutNullStreams = spawn('ffmpeg', [
-      '-re',
-      '-i',
-      rtmpUrl,
-      '-c:v',
-      'copy',
-      '-c:a',
-      'aac',
-      '-f',
-      'rtsp',
-      '-rtsp_transport',
-      'tcp',
-      rtspUrl,
-    ]);
+    const ffmpegArgs: string[] = ['-re', '-i', rtmpUrl];
+
+    // Video settings
+    ffmpegArgs.push('-vf', `scale=${dto.resolution ?? '1280:720'}`);
+    ffmpegArgs.push('-r', String(dto.fps ?? 30)); // FPS
+    ffmpegArgs.push('-c:v', 'libx264');
+    ffmpegArgs.push('-preset', 'fast');
+
+    // Audio settings
+    if (dto.disableAudio) {
+      ffmpegArgs.push('-an'); // Disable audio
+    } else {
+      ffmpegArgs.push('-c:a', 'aac');
+      if (dto.audioBitrate) {
+        ffmpegArgs.push('-b:a', dto.audioBitrate);
+      }
+    }
+
+    // Bitrate
+    if (dto.videoBitrate) {
+      ffmpegArgs.push('-b:v', dto.videoBitrate);
+    }
+
+    ffmpegArgs.push('-f', 'rtsp', '-rtsp_transport', 'tcp', rtspUrl);
+
+    const ffmpeg: ChildProcessWithoutNullStreams = spawn('ffmpeg', ffmpegArgs);
 
     ffmpeg.stdout.pipe(logStream);
     ffmpeg.stderr.pipe(logStream);
 
     const stream: StreamEntity = {
       id,
-      name: streamKey,
+      name: id,
       rtmpUrl,
       rtspUrl,
       status: 'starting',
@@ -60,6 +73,7 @@ export class StreamsService implements OnModuleDestroy {
       restartAttempts: 0,
     };
 
+    // остальная логика без изменений
     this.snapshotService.startSnapshots(id, rtspUrl);
 
     ffmpeg.on('spawn', async () => {
@@ -75,20 +89,16 @@ export class StreamsService implements OnModuleDestroy {
 
       if (!ok) {
         const errorMessage = `[❌] Поток ${stream.name} не прошёл RTSP-тест.`;
-
         console.warn(errorMessage);
         stream.status = 'error';
         stream.process?.kill('SIGINT');
-
         await this.botService.broadcastError(errorMessage);
-
         this.socketsService.emitStreamError({
           id: stream.id,
           name: stream.name,
           message: errorMessage,
           timestamp: new Date().toISOString(),
         });
-
         return;
       }
 

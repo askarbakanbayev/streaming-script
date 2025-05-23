@@ -23,6 +23,7 @@ import { SendErrorDto } from './dto/send-error.dto';
 import { createReadStream, existsSync } from 'fs';
 import { join } from 'path';
 import { Response } from 'express';
+import { CreateStreamDto } from './dto/create-streaming.dto';
 
 @ApiTags('Streams')
 @Controller('streams')
@@ -38,17 +39,11 @@ export class StreamsController {
     summary: 'Notify server of incoming RTMP stream (auto convert to RTSP)',
   })
   @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        streamKey: { type: 'string' },
-      },
-      required: ['streamKey'],
-    },
+    type: CreateStreamDto,
   })
   @ApiResponse({ status: 201, description: 'Conversion started' })
-  notifyIncomingStream(@Body() body: { streamKey: string }) {
-    return this.streamsService.startStream(body.streamKey);
+  notifyIncomingStream(@Body() dto: CreateStreamDto) {
+    return this.streamsService.startStream(dto);
   }
 
   @Get(':id/logs/download')
