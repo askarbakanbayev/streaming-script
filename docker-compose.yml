@@ -14,9 +14,9 @@ services:
       - '8000:8000/udp' # RTP (optional)
     volumes:
       - ./mediamtx.yml:/mediamtx.yml:ro
-    restart: always
     networks:
       - streamnet
+    restart: always
 
   backend:
     build:
@@ -34,6 +34,6 @@ services:
       - RTSP_BASE_URL=rtsp://rtsp-server:8554
       - BOT_TOKEN=${BOT_TOKEN}
       - ADMIN_CHAT_IDS=${ADMIN_CHAT_IDS}
-    restart: always
     networks:
       - streamnet
+    restart: always
