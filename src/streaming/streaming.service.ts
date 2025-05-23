@@ -13,7 +13,6 @@ export class StreamsService implements OnModuleDestroy {
   private readonly MAX_RESTART_ATTEMPTS = 3;
 
   constructor() {
-    // Проверка статуса потоков каждые 10 секунд
     setInterval(() => this.healthCheckStreams(), 10000);
   }
 

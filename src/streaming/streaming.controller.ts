@@ -1,4 +1,3 @@
-// src/streams/streaming.controller.ts
 import {
   Controller,
   Post,
@@ -9,9 +8,17 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
 import { StreamsService } from './streaming.service';
 import { CreateStreamDto } from './dto/create-streaming.dto';
+import { StreamEntity } from './entities/streaming.entity';
+import { StreamDto } from './dto/stream.dto';
 import { BotService } from 'src/bot/bot.service'; // Импортируем BotService
 import { SendErrorDto } from './dto/send-error.dto';
 
@@ -24,16 +31,34 @@ export class StreamsController {
   ) {}
 
   @Post()
+  @ApiOperation({ summary: 'Start a new RTMP → RTSP stream' })
+  @ApiResponse({
+    status: 201,
+    description: 'Stream started successfully',
+    type: Object,
+  })
+  @ApiBody({ type: CreateStreamDto })
   create(@Body() dto: CreateStreamDto) {
     return this.streamsService.startStream(dto.name, dto.rtmpUrl);
   }
 
   @Get()
+  @ApiOperation({ summary: 'Get list of all active streams' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of active streams',
+    type: StreamDto,
+    isArray: true,
+  })
   findAll() {
     return this.streamsService.getStreams();
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Stop and remove a stream by ID' })
+  @ApiParam({ name: 'id', description: 'Stream ID' })
+  @ApiResponse({ status: 200, description: 'Stream stopped successfully' })
+  @ApiResponse({ status: 404, description: 'Stream not found' })
   remove(@Param('id') id: string) {
     if (!this.streamsService.stopStream(id)) {
       throw new HttpException('Stream not found', HttpStatus.NOT_FOUND);
@@ -42,6 +67,10 @@ export class StreamsController {
   }
 
   @Get(':id/logs')
+  @ApiOperation({ summary: 'Get FFmpeg logs for a stream' })
+  @ApiParam({ name: 'id', description: 'Stream ID' })
+  @ApiResponse({ status: 200, description: 'Log file contents as text' })
+  @ApiResponse({ status: 404, description: 'Log not found' })
   getLogs(@Param('id') id: string) {
     const log = this.streamsService.getLog(id);
     if (!log) {
