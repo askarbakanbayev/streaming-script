@@ -105,6 +105,22 @@ export class StreamsController {
     return log;
   }
 
+  @Get(':id/snapshot')
+  @ApiOperation({ summary: 'Get the latest snapshot of a stream' })
+  @ApiParam({ name: 'id', description: 'Stream ID' })
+  @ApiResponse({ status: 200, description: 'Image/jpeg snapshot' })
+  @ApiResponse({ status: 404, description: 'Snapshot not found' })
+  getSnapshot(@Param('id') id: string, @Res() res: Response) {
+    const filePath = join(process.cwd(), 'snapshots', `${id}.jpg`);
+
+    if (!existsSync(filePath)) {
+      throw new HttpException('Snapshot not found', HttpStatus.NOT_FOUND);
+    }
+
+    res.setHeader('Content-Type', 'image/jpeg');
+    createReadStream(filePath).pipe(res);
+  }
+
   @Get(':id/play')
   @ApiOperation({ summary: 'Get RTSP play command (VLC/ffplay)' })
   @ApiParam({ name: 'id', description: 'Stream ID' })
