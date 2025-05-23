@@ -16,6 +16,9 @@ RUN yarn install --frozen-lockfile
 # Копируем остальной код
 COPY . .
 
+# Создаём директорию logs
+RUN mkdir -p /app/logs
+
 # Генерируем Prisma Client
 RUN npx prisma generate
 
