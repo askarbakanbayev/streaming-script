@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { StreamingModule } from './streaming/streaming.module';
+import { StreamsModule } from './streaming/streaming.module';
 
 @Module({
-  imports: [StreamingModule],
+  imports: [StreamsModule],
   controllers: [AppController],
   providers: [AppService],
 })
