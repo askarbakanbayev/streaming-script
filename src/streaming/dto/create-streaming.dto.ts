@@ -8,7 +8,7 @@ export class CreateStreamDto {
   name: string;
 
   @ApiProperty({
-    example: 'rtmp://example.com/live/stream1',
+    example: 'rtmp://example.com/stream1',
     description: 'RTMP URL источника потока',
   })
   rtmpUrl: string;

@@ -33,6 +33,8 @@ docker run -d --name local-rtmp -p 1935:1935 -p 8080:80 alfg/nginx-rtmp
 sleep 3
 
 echo -e "${YELLOW}📡 Стрим видео car.mp4 через FFmpeg...${NC}"
+
 ffmpeg -re -i ./videos/car.mp4 \
-       -c:v libx264 -c:a aac -strict -2 \
-       -f flv rtmp://localhost:1935/stream
+  -c:v libx264 -preset veryfast -tune zerolatency \
+  -c:a aac \
+  -f flv rtmp://localhost:1935/live/stream
