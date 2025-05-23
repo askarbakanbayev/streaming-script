@@ -31,7 +31,6 @@ export class StreamsController {
   constructor(
     private readonly streamsService: StreamsService,
     private readonly botService: BotService,
-    s,
   ) {}
 
   @Post('notify')
