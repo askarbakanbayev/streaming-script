@@ -32,8 +32,7 @@ docker rm -f local-rtmp &>/dev/null
 docker run -d --name local-rtmp -p 1935:1935 -p 8080:80 alfg/nginx-rtmp
 sleep 3
 
-echo -e "${YELLOW}📡 Генерация беззвучного RTMP-потока через FFmpeg...${NC}"
-ffmpeg -re -f lavfi -i testsrc=size=640x360:rate=30 \
-       -f lavfi -i anullsrc=channel_layout=mono:sample_rate=44100 \
+echo -e "${YELLOW}📡 Стрим видео car.mp4 через FFmpeg...${NC}"
+ffmpeg -re -i ./videos/car.mp4 \
        -c:v libx264 -c:a aac -strict -2 \
        -f flv rtmp://localhost:1935/stream
