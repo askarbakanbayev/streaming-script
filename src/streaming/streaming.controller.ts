@@ -17,9 +17,8 @@ import {
 } from '@nestjs/swagger';
 import { StreamsService } from './streaming.service';
 import { CreateStreamDto } from './dto/create-streaming.dto';
-import { StreamEntity } from './entities/streaming.entity';
 import { StreamDto } from './dto/stream.dto';
-import { BotService } from 'src/bot/bot.service'; // Импортируем BotService
+import { BotService } from 'src/bot/bot.service';
 import { SendErrorDto } from './dto/send-error.dto';
 
 @ApiTags('Streams')

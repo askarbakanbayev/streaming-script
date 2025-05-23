@@ -1,10 +1,10 @@
-// src/streams/streaming.service.ts
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { StreamEntity } from './entities/streaming.entity';
+import { StreamSocketsService } from 'src/stream-sockets/stream-sockets.service';
 
 @Injectable()
 export class StreamsService implements OnModuleDestroy {
@@ -12,7 +12,7 @@ export class StreamsService implements OnModuleDestroy {
   private readonly rtspBase = 'rtsp://localhost:8554';
   private readonly MAX_RESTART_ATTEMPTS = 3;
 
-  constructor() {
+  constructor(private readonly socketsService: StreamSocketsService) {
     setInterval(() => this.healthCheckStreams(), 10000);
   }
 
@@ -54,21 +54,44 @@ export class StreamsService implements OnModuleDestroy {
     ffmpeg.on('spawn', () => {
       stream.status = 'running';
       stream.restartAttempts = 0;
+      this.socketsService.emitStreamStatus({
+        id: stream.id,
+        name: stream.name,
+        status: 'running',
+        timestamp: new Date().toISOString(),
+      });
     });
 
     ffmpeg.on('exit', (code) => {
       if (stream.status !== 'stopped') {
         stream.status = 'error';
         stream.process = null;
-        console.warn(
-          `[!] Поток ${stream.name} завершился неожиданно (код ${code})`,
-        );
+
+        const msg = `[!] Поток ${stream.name} завершился неожиданно (код ${code})`;
+        console.warn(msg);
+
+        this.socketsService.emitStreamError({
+          id: stream.id,
+          name: stream.name,
+          message: msg,
+          timestamp: new Date().toISOString(),
+        });
       }
     });
 
-    ffmpeg.on('error', () => {
+    ffmpeg.on('error', (error) => {
       stream.status = 'error';
       stream.process = null;
+
+      const msg = `[❌] Ошибка процесса ffmpeg потока ${stream.name}`;
+      console.error(msg);
+
+      this.socketsService.emitStreamError({
+        id: stream.id,
+        name: stream.name,
+        message: msg,
+        timestamp: new Date().toISOString(),
+      });
     });
 
     this.streams.set(id, stream);
@@ -81,9 +104,16 @@ export class StreamsService implements OnModuleDestroy {
         stream.status === 'error' &&
         stream.restartAttempts < this.MAX_RESTART_ATTEMPTS
       ) {
-        console.log(
-          `[↻] Перезапуск потока ${stream.name} (попытка ${stream.restartAttempts + 1})`,
-        );
+        const msg = `[↻] Перезапуск потока ${stream.name} (попытка ${stream.restartAttempts + 1})`;
+        console.log(msg);
+
+        this.socketsService.emitStreamStatus({
+          id: stream.id,
+          name: stream.name,
+          status: 'restarting',
+          timestamp: new Date().toISOString(),
+        });
+
         this.restartStream(id);
       }
     }
@@ -120,6 +150,12 @@ export class StreamsService implements OnModuleDestroy {
     newProcess.on('spawn', () => {
       old.status = 'running';
       old.restartAttempts = 0;
+      this.socketsService.emitStreamStatus({
+        id: old.id,
+        name: old.name,
+        status: 'running',
+        timestamp: new Date().toISOString(),
+      });
       console.log(`[✅] Поток ${old.name} успешно перезапущен`);
     });
 
@@ -144,6 +180,14 @@ export class StreamsService implements OnModuleDestroy {
     stream.status = 'stopped';
     stream.process?.kill('SIGINT');
     this.streams.delete(id);
+
+    this.socketsService.emitStreamStatus({
+      id,
+      name: stream.name,
+      status: 'stopped',
+      timestamp: new Date().toISOString(),
+    });
+
     return true;
   }
 
