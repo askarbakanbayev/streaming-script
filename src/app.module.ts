@@ -6,6 +6,7 @@ import { BotModule } from './bot/bot.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { StreamSocketsModule } from './stream-sockets/stream-sockets.module';
 import { GpsModule } from './gps/gps.module';
+import { SnapshotsModule } from './snapshots/snapshots.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { GpsModule } from './gps/gps.module';
     BotModule,
     StreamSocketsModule,
     GpsModule,
+    SnapshotsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
