@@ -5,8 +5,11 @@ echo "🔍 Обновляем пакеты и устанавливаем зав�
 apt update
 apt install -y ffmpeg docker.io docker-compose
 
-echo "🐳 Останавливаем старые контейнеры (если есть)…"
-docker-compose down rtsp-server || true
+echo "🗑 Удаляем старые контейнеры и орфанов (если есть)…"
+# убираем старый rtsp-server
+docker rm -f rtsp-server || true
+# чистим орфанов
+docker-compose down --remove-orphans
 
 echo "🐳 Запускаем RTMP/RTSP-сервер…"
 docker-compose up -d rtsp-server
