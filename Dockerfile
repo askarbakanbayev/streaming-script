@@ -1,8 +1,8 @@
 # Используем свежий Node.js на Alpine
 FROM node:current-alpine
 
-# Устанавливаем FFmpeg
-RUN apk add --no-cache ffmpeg
+# Устанавливаем FFmpeg и необходимые зависимости
+RUN apk add --no-cache ffmpeg openssl
 
 # Создаём рабочую директорию
 WORKDIR /app
@@ -15,6 +15,9 @@ RUN yarn install --frozen-lockfile
 
 # Копируем остальной код
 COPY . .
+
+# Генерируем Prisma Client
+RUN npx prisma generate
 
 # Собираем проект
 RUN yarn build

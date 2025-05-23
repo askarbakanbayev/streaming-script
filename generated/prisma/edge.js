@@ -160,7 +160,7 @@ const config = {
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": "../../.env",
+    "rootEnvPath": null,
     "schemaEnvPath": "../../.env"
   },
   "relativePath": "../../prisma",
@@ -170,6 +170,7 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
@@ -178,8 +179,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel Stream {\n  id              String    @id @default(cuid())\n  name            String    @unique\n  rtmpUrl         String\n  rtspUrl         String\n  status          String\n  logPath         String\n  restartAttempts Int\n  startTime       DateTime?\n  lastHealthCheck DateTime?\n\n  resolution   String?\n  fps          Int?\n  videoBitrate String?\n  audioBitrate String?\n  disableAudio Boolean?\n\n  isHealthy Boolean? @default(false)\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n",
-  "inlineSchemaHash": "5060a6cf140b3d9ae1854280c992c6767d9aadc53dad32f04dc60483c7c7a3a4",
+  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel Stream {\n  id              String    @id @default(cuid())\n  name            String    @unique\n  rtmpUrl         String\n  rtspUrl         String\n  status          String\n  logPath         String\n  restartAttempts Int\n  startTime       DateTime?\n  lastHealthCheck DateTime?\n  resolution      String?\n  fps             Int?\n  videoBitrate    String?\n  audioBitrate    String?\n  disableAudio    Boolean?\n  isHealthy       Boolean?  @default(false)\n  createdAt       DateTime  @default(now())\n  updatedAt       DateTime  @updatedAt\n}\n",
+  "inlineSchemaHash": "d3392441ab3c9d81220cddaab82056cdb29c22fd6d4bbfa122e04d6cd1b75346",
   "copyEngine": true
 }
 config.dirname = '/'
