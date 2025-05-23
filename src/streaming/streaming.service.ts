@@ -195,6 +195,22 @@ export class StreamsService implements OnModuleDestroy {
     return fs.readFileSync(stream.logPath, 'utf-8');
   }
 
+  getMetadata(id: string): Partial<StreamEntity> | null {
+    const stream = this.streams.get(id);
+    if (!stream) return null;
+
+    return {
+      id: stream.id,
+      name: stream.name,
+      rtmpUrl: stream.rtmpUrl,
+      rtspUrl: stream.rtspUrl,
+      status: stream.status,
+      logPath: stream.logPath,
+      restartAttempts: stream.restartAttempts,
+      startTime: stream.startTime, // Добавим ниже
+    };
+  }
+
   onModuleDestroy() {
     this.streams.forEach((s) => s.process?.kill('SIGINT'));
   }
