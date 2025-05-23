@@ -1,4 +1,4 @@
-// src/streams/streams.controller.ts
+// src/streams/streaming.controller.ts
 import {
   Controller,
   Post,

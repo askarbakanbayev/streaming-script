@@ -1,7 +1,7 @@
-// src/streams/streams.service.ts
+// src/streams/streaming.service.ts
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { spawn } from 'child_process';
+import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { StreamEntity } from './entities/streaming.entity';
@@ -9,7 +9,7 @@ import { StreamEntity } from './entities/streaming.entity';
 @Injectable()
 export class StreamsService implements OnModuleDestroy {
   private streams = new Map<string, StreamEntity>();
-  private rtspBase = 'rtsp://localhost:8554';
+  private readonly rtspBase = 'rtsp://localhost:8554';
 
   startStream(name: string, rtmpUrl: string): StreamEntity {
     const id = uuidv4();
@@ -17,16 +17,18 @@ export class StreamsService implements OnModuleDestroy {
     const logPath = path.resolve(`logs/stream-${id}.log`);
     const logStream = fs.createWriteStream(logPath, { flags: 'a' });
 
-    const ffmpeg = spawn('ffmpeg', [
+    const ffmpeg: ChildProcessWithoutNullStreams = spawn('ffmpeg', [
       '-re',
       '-i',
       rtmpUrl,
       '-c:v',
       'copy',
       '-c:a',
-      'copy',
+      'aac',
       '-f',
       'rtsp',
+      '-rtsp_transport',
+      'tcp',
       rtspUrl,
     ]);
 

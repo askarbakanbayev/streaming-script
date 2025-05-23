@@ -1,4 +1,4 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { CreateStreamingDto } from './create-streaming.dto';
+import { CreateStreamDto } from './create-streaming.dto';
 
-export class UpdateStreamingDto extends PartialType(CreateStreamingDto) {}
+export class UpdateStreamingDto extends PartialType(CreateStreamDto) {}
