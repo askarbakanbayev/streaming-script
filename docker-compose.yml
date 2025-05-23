@@ -29,7 +29,7 @@ services:
       # адрес вашего RTSP-сервера внутри Docker-сети
       RTSP_BASE_URL: rtsp://rtsp-server:8554
         - BOT_TOKEN=${BOT_TOKEN}
-        - ADMIN_CHAT_ID=${ADMIN_CHAT_ID}
+        - ADMIN_CHAT_IDS=${ADMIN_CHAT_IDS}
     restart: always
     networks:
       - streamnet
