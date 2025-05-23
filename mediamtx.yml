@@ -1,12 +1,11 @@
-# rtsp-simple-server.yml
-protocols: [tcp, udp, rtmp]
+# mediamtx.yml
+logLevel: info
 
 rtmp:
-  enabled: yes
-  listen: :1935
+  enable: yes # <— not “enabled”
 
 rtsp:
-  protocols: [tcp, udp]
+  enable: yes # <— not “enabled”
 
 paths:
   all:
