@@ -6,10 +6,11 @@ import { StreamSocketsModule } from 'src/stream-sockets/stream-sockets.module';
 import { GpsModule } from 'src/gps/gps.module';
 import { SnapshotsModule } from 'src/snapshots/snapshots.module';
 import { SnapshotsService } from 'src/snapshots/snapshots.service';
+import { StreamHealthService } from './stream-health.service';
 
 @Module({
   imports: [BotModule, StreamSocketsModule, GpsModule, SnapshotsModule],
   controllers: [StreamsController],
-  providers: [StreamsService],
+  providers: [StreamsService, StreamHealthService],
 })
 export class StreamsModule {}

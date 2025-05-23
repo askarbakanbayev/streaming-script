@@ -6,6 +6,8 @@ import { StreamEntity } from './entities/streaming.entity';
 import { StreamSocketsService } from 'src/stream-sockets/stream-sockets.service';
 import { GpsService } from 'src/gps/gps.service';
 import { SnapshotsService } from 'src/snapshots/snapshots.service';
+import { StreamHealthService } from './stream-health.service';
+import { BotService } from 'src/bot/bot.service';
 
 @Injectable()
 export class StreamsService implements OnModuleDestroy {
@@ -16,6 +18,8 @@ export class StreamsService implements OnModuleDestroy {
   constructor(
     private readonly socketsService: StreamSocketsService,
     private readonly snapshotService: SnapshotsService,
+    private readonly streamHealthService: StreamHealthService,
+    private readonly botService: BotService,
   ) {
     setInterval(() => this.healthCheckStreams(), 10000);
   }
@@ -58,7 +62,7 @@ export class StreamsService implements OnModuleDestroy {
 
     this.snapshotService.startSnapshots(id, rtspUrl);
 
-    ffmpeg.on('spawn', () => {
+    ffmpeg.on('spawn', async () => {
       stream.status = 'running';
       this.socketsService.emitStreamStatus({
         id: stream.id,
@@ -66,6 +70,29 @@ export class StreamsService implements OnModuleDestroy {
         status: 'running',
         timestamp: new Date().toISOString(),
       });
+
+      const ok = await this.streamHealthService.testRtspStream(rtspUrl);
+
+      if (!ok) {
+        const errorMessage = `[❌] Поток ${stream.name} не прошёл RTSP-тест.`;
+
+        console.warn(errorMessage);
+        stream.status = 'error';
+        stream.process?.kill('SIGINT');
+
+        await this.botService.broadcastError(errorMessage);
+
+        this.socketsService.emitStreamError({
+          id: stream.id,
+          name: stream.name,
+          message: errorMessage,
+          timestamp: new Date().toISOString(),
+        });
+
+        return;
+      }
+
+      console.log(`[✅] Поток ${stream.name} прошёл RTSP-тест`);
     });
 
     ffmpeg.on('exit', () => {
