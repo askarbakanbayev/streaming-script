@@ -10,6 +10,7 @@ services:
     ports:
       - '1935:1935' # RTMP ingest
       - '8554:8554' # RTSP serve
+      - '8080:8080' # HTTP status
     volumes:
       - ./mediamtx.yml:/mediamtx.yml:ro
     command: ['/mediamtx.yml']
@@ -23,8 +24,7 @@ services:
     depends_on:
       - rtsp-server
     volumes:
-      - ./videos:/videos:ro # mount your video folder
-    # stream your real file instead of the test pattern
+      - ./videos:/videos:ro
     command: >
       -re -i /videos/car.mp4
       -c:v libx264 -preset veryfast -tune zerolatency
@@ -32,7 +32,6 @@ services:
       -f flv rtmp://rtsp-server:1935/mystream
     networks:
       - streamnet
-    # if you want it to run once and exit, use no-restart:
     restart: 'no'
 
   backend:

@@ -1,14 +1,17 @@
-# mediamtx.yml
-
 logLevel: info
 
-# simply turn RTMP ingest on/off
+# RTMP ingest
 rtmp: true
 
-# simply turn RTSP serve on/off
+# RTSP serve
 rtsp: true
 
+# HTTP status/metrics
+http:
+  enabled: yes
+  listen: :8080
+
+# auto-publish every RTMP app/stream on the same RTSP path
 paths:
-  # every incoming RTMP <app>/<stream> is auto-published at the same path over RTSP
   all:
     source: publisher
