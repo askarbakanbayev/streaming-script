@@ -105,6 +105,31 @@ export class StreamsController {
     return log;
   }
 
+  @Get(':id/play')
+  @ApiOperation({ summary: 'Get RTSP play command (VLC/ffplay)' })
+  @ApiParam({ name: 'id', description: 'Stream ID' })
+  @ApiResponse({ status: 200, description: 'Command to play stream' })
+  @ApiResponse({ status: 404, description: 'Stream not found' })
+  getPlayCommand(@Param('id') id: string) {
+    const metadata = this.streamsService.getMetadata(id);
+    if (!metadata) {
+      throw new HttpException('Stream not found', HttpStatus.NOT_FOUND);
+    }
+
+    return {
+      rtspUrl: metadata.rtspUrl,
+      ffplay: `ffplay ${metadata.rtspUrl}`,
+      vlc: `vlc ${metadata.rtspUrl}`,
+      sdp: `v=0
+o=- 0 0 IN IP4 127.0.0.1
+s=RTSP Stream
+c=IN IP4 127.0.0.1
+t=0 0
+m=video 8554 RTP/AVP 96
+a=rtpmap:96 H264/90000`,
+    };
+  }
+
   @Get(':id/metadata')
   @ApiOperation({ summary: 'Get metadata for a stream' })
   @ApiParam({ name: 'id', description: 'Stream ID' })
