@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  rtmp-server:
+    image: alfg/nginx-rtmp
+    container_name: rtmp-server
+    ports:
+      - '1935:1935' # RTMP
+      - '8080:80' # Web UI
+    restart: always
+
+  rtsp-server:
+    image: aler9/rtsp-simple-server
+    container_name: rtsp-server
+    ports:
+      - '8554:8554' # RTSP
+      - '8000:8000/udp' # RTP (optional)
+    restart: always
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stream-backend
+    ports:
+      - '3000:3000'

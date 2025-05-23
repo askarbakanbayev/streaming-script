@@ -6,6 +6,7 @@ export interface StreamEntity {
   rtmpUrl: string;
   rtspUrl: string;
   status: 'starting' | 'running' | 'stopped' | 'error';
-  process: ChildProcessWithoutNullStreams;
+  process: any;
   logPath: string;
+  restartAttempts: number;
 }

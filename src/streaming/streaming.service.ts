@@ -10,6 +10,12 @@ import { StreamEntity } from './entities/streaming.entity';
 export class StreamsService implements OnModuleDestroy {
   private streams = new Map<string, StreamEntity>();
   private readonly rtspBase = 'rtsp://localhost:8554';
+  private readonly MAX_RESTART_ATTEMPTS = 3;
+
+  constructor() {
+    // Проверка статуса потоков каждые 10 секунд
+    setInterval(() => this.healthCheckStreams(), 10000);
+  }
 
   startStream(name: string, rtmpUrl: string): StreamEntity {
     const id = uuidv4();
@@ -43,14 +49,90 @@ export class StreamsService implements OnModuleDestroy {
       status: 'starting',
       process: ffmpeg,
       logPath,
+      restartAttempts: 0,
     };
 
-    ffmpeg.on('spawn', () => (stream.status = 'running'));
-    ffmpeg.on('exit', () => (stream.status = 'stopped'));
-    ffmpeg.on('error', () => (stream.status = 'error'));
+    ffmpeg.on('spawn', () => {
+      stream.status = 'running';
+      stream.restartAttempts = 0;
+    });
+
+    ffmpeg.on('exit', (code) => {
+      if (stream.status !== 'stopped') {
+        stream.status = 'error';
+        stream.process = null;
+        console.warn(
+          `[!] Поток ${stream.name} завершился неожиданно (код ${code})`,
+        );
+      }
+    });
+
+    ffmpeg.on('error', () => {
+      stream.status = 'error';
+      stream.process = null;
+    });
 
     this.streams.set(id, stream);
     return stream;
+  }
+
+  private healthCheckStreams() {
+    for (const [id, stream] of this.streams.entries()) {
+      if (
+        stream.status === 'error' &&
+        stream.restartAttempts < this.MAX_RESTART_ATTEMPTS
+      ) {
+        console.log(
+          `[↻] Перезапуск потока ${stream.name} (попытка ${stream.restartAttempts + 1})`,
+        );
+        this.restartStream(id);
+      }
+    }
+  }
+
+  private restartStream(id: string) {
+    const old = this.streams.get(id);
+    if (!old) return;
+
+    const newProcess = spawn('ffmpeg', [
+      '-re',
+      '-i',
+      old.rtmpUrl,
+      '-c:v',
+      'copy',
+      '-c:a',
+      'aac',
+      '-f',
+      'rtsp',
+      '-rtsp_transport',
+      'tcp',
+      old.rtspUrl,
+    ]);
+
+    const logStream = fs.createWriteStream(old.logPath, { flags: 'a' });
+
+    newProcess.stdout.pipe(logStream);
+    newProcess.stderr.pipe(logStream);
+
+    old.process = newProcess;
+    old.status = 'starting';
+    old.restartAttempts += 1;
+
+    newProcess.on('spawn', () => {
+      old.status = 'running';
+      old.restartAttempts = 0;
+      console.log(`[✅] Поток ${old.name} успешно перезапущен`);
+    });
+
+    newProcess.on('exit', () => {
+      old.status = 'error';
+      old.process = null;
+    });
+
+    newProcess.on('error', () => {
+      old.status = 'error';
+      old.process = null;
+    });
   }
 
   getStreams(): StreamEntity[] {
@@ -60,7 +142,8 @@ export class StreamsService implements OnModuleDestroy {
   stopStream(id: string): boolean {
     const stream = this.streams.get(id);
     if (!stream) return false;
-    stream.process.kill('SIGINT');
+    stream.status = 'stopped';
+    stream.process?.kill('SIGINT');
     this.streams.delete(id);
     return true;
   }
@@ -72,6 +155,6 @@ export class StreamsService implements OnModuleDestroy {
   }
 
   onModuleDestroy() {
-    this.streams.forEach((s) => s.process.kill('SIGINT'));
+    this.streams.forEach((s) => s.process?.kill('SIGINT'));
   }
 }
