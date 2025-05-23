@@ -1,8 +1,12 @@
 version: '3.9'
 
+networks:
+  streamnet:
+    driver: bridge
+
 services:
   rtsp-server:
-    image: aler9/rtsp-simple-server:latest
+    image: bluenviron/mediamtx:latest
     container_name: rtsp-server
     ports:
       - '1935:1935' # RTMP ingest
@@ -25,6 +29,7 @@ services:
       - ./logs:/app/logs
     depends_on:
       - rtsp-server
+    env_file: .env
     environment:
       - RTSP_BASE_URL=rtsp://rtsp-server:8554
       - BOT_TOKEN=${BOT_TOKEN}
@@ -32,7 +37,3 @@ services:
     restart: always
     networks:
       - streamnet
-
-networks:
-  streamnet:
-    driver: bridge
