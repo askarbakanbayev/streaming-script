@@ -1,1 +1,1 @@
-export class Gp {}
+export class Gps {}

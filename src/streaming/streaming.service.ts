@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { StreamEntity } from './entities/streaming.entity';
 import { StreamSocketsService } from 'src/stream-sockets/stream-sockets.service';
+import { GpsService } from 'src/gps/gps.service';
 
 @Injectable()
 export class StreamsService implements OnModuleDestroy {
@@ -12,7 +13,10 @@ export class StreamsService implements OnModuleDestroy {
   private readonly rtspBase = 'rtsp://localhost:8554';
   private readonly MAX_RESTART_ATTEMPTS = 3;
 
-  constructor(private readonly socketsService: StreamSocketsService) {
+  constructor(
+    private readonly socketsService: StreamSocketsService,
+    private readonly gpsService: GpsService,
+  ) {
     setInterval(() => this.healthCheckStreams(), 10000);
   }
 
@@ -21,6 +25,19 @@ export class StreamsService implements OnModuleDestroy {
     const rtspUrl = `${this.rtspBase}/stream-${id}`;
     const logPath = path.resolve(`logs/stream-${id}.log`);
     const logStream = fs.createWriteStream(logPath, { flags: 'a' });
+
+    // Попробуем сразу отправить GPS, если он уже есть
+    const gps = this.gpsService.findOne(id);
+    if (gps) {
+      this.socketsService.emitGpsPosition({
+        streamId: id,
+        lat: gps.lat,
+        lng: gps.lng,
+        altitude: gps.altitude,
+        speed: gps.speed,
+        timestamp: new Date().toISOString(),
+      });
+    }
 
     const ffmpeg: ChildProcessWithoutNullStreams = spawn('ffmpeg', [
       '-re',

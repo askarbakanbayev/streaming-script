@@ -22,4 +22,15 @@ export class StreamSocketsService {
   }) {
     this.gateway.server.emit('stream_status', data);
   }
+
+  emitGpsPosition(data: {
+    streamId: string;
+    lat: number;
+    lng: number;
+    altitude: number;
+    speed: number;
+    timestamp: string;
+  }) {
+    this.gateway.server.emit('drone_position', data);
+  }
 }

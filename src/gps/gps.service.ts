@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CreateGpDto } from './dto/create-gp.dto';
+import { CreateGpDto } from './dto/create-gps.dto';
 
 @Injectable()
 export class GpsService {

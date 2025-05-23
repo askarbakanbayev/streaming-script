@@ -6,8 +6,7 @@ import {
 } from '@nestjs/websockets';
 import { Server } from 'socket.io';
 import { GpsService } from './gps.service';
-import { CreateGpDto } from './dto/create-gp.dto';
-import { UpdateGpDto } from './dto/update-gp.dto';
+import { CreateGpDto } from './dto/create-gps.dto';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class GpsGateway {
@@ -20,7 +19,7 @@ export class GpsGateway {
   handleGpsUpdate(@MessageBody() dto: CreateGpDto) {
     this.gpsService.create(dto);
 
-    this.server.emit('drone_position', {
+    this.server.emit('position', {
       ...dto,
       timestamp: new Date().toISOString(),
     });
