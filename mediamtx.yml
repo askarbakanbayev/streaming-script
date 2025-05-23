@@ -1,17 +1,14 @@
+# уровень лога
 logLevel: info
 
-# RTMP ingest
+# включаем RTMP-приём
 rtmp: true
 
-# RTSP serve
+# включаем RTSP-отдачу
 rtsp: true
 
-# HTTP status/metrics
-http:
-  enabled: yes
-  listen: :8080
-
-# auto-publish every RTMP app/stream on the same RTSP path
+# все потоки, опубликованные по RTMP/RTSP, автоматически
+# будут доступны на том же пути
 paths:
   all:
     source: publisher

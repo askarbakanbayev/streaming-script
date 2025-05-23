@@ -1,4 +1,5 @@
 version: '3.9'
+
 networks:
   streamnet:
     driver: bridge
@@ -10,7 +11,6 @@ services:
     ports:
       - '1935:1935' # RTMP ingest
       - '8554:8554' # RTSP serve
-      - '8080:8080' # HTTP status
     volumes:
       - ./mediamtx.yml:/mediamtx.yml:ro
     command: ['/mediamtx.yml']
@@ -23,9 +23,8 @@ services:
     container_name: ffmpeg-simulator
     depends_on:
       - rtsp-server
-
     volumes:
-      - ./videos:/videos # Монтируем локальные видео в контейнер
+      - ./videos:/videos # локальные видео
     command: >
       -re
       -f lavfi -i testsrc=size=640x360:rate=30
@@ -36,19 +35,3 @@ services:
     networks:
       - streamnet
     restart: 'no'
-
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: stream-backend
-    ports:
-      - '6001:6001'
-    volumes:
-      - ./logs:/app/logs
-    depends_on:
-      - rtsp-server
-    env_file: .env
-    networks:
-      - streamnet
-    restart: always
