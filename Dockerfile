@@ -1,26 +1,26 @@
-# Используем свежий Node.js на Alpine
-FROM node:current-alpine
+FROM --platform=linux/amd64 node:22-slim
 
-# Устанавливаем FFmpeg
-RUN apk add --no-cache ffmpeg
+# Устанавливаем нужные пакеты
+RUN apt-get update && apt-get install -y ffmpeg openssl && rm -rf /var/lib/apt/lists/*
 
-# Создаём рабочую директорию
+# Рабочая директория
 WORKDIR /app
 
-# Копируем package.json и lock файл
-COPY package.json yarn.lock ./
-
-# Устанавливаем зависимости
+# Установка зависимостей
+COPY package*.json yarn.lock ./
 RUN yarn install --frozen-lockfile
 
 # Копируем остальной код
 COPY . .
 
-# Собираем проект
+# Генерация Prisma Client
+RUN yarn prisma generate
+
+# Сборка проекта
 RUN yarn build
 
 # Открываем порт
 EXPOSE 6001
 
-# Стартуем
-CMD ["node", "dist/main"]
+# Запуск
+CMD ["yarn", "start:prod"]
