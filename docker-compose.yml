@@ -24,7 +24,7 @@ services:
     depends_on:
       - rtsp-server
     volumes:
-      - ./videos:/videos # локальные видео
+      - ./videos:/videos
     command: >
       -re
       -f lavfi -i testsrc=size=640x360:rate=30
@@ -35,3 +35,16 @@ services:
     networks:
       - streamnet
     restart: 'no'
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile # ваш Node.js на Alpine
+    container_name: stream-backend
+    ports:
+      - '6001:6001'
+    depends_on:
+      - rtsp-server
+    networks:
+      - streamnet
+    restart: always
