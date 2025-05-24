@@ -17,7 +17,7 @@ describe('SnapshotsController (e2e)', () => {
 
   it('/snapshots/:id/snapshot (GET)', () => {
     return request(app.getHttpServer())
-      .get('/snapshots/test-id/snapshot')
+      .get('/snapshots/stream/snapshot')
       .expect(200);
   });
 
