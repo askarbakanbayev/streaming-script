@@ -28,5 +28,9 @@ RUN yarn build
 # Открываем порт
 EXPOSE 6001
 
-# Выполняем миграции и запускаем приложение
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]
+# Сбрасываем Prisma базу и запускаем приложение
+CMD sh -c "until nc -z postgres-stream-db 5432; do sleep 1; done && \
+           echo '✅ DB ready, resetting...' && \
+           npx prisma migrate reset --force --skip-seed && \
+           echo '🚀 Starting app...' && \
+           node dist/main"
