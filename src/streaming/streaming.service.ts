@@ -226,7 +226,6 @@ export class StreamsService implements OnModuleDestroy {
         status: 'running',
         timestamp: new Date().toISOString(),
       });
-      console.log(`[✅] Поток ${old.name} успешно перезапущен`);
     });
 
     newProcess.on('exit', () => {
