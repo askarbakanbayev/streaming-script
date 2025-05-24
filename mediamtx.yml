@@ -4,16 +4,43 @@ logLevel: info
 api: yes
 apiAddress: :9997
 
-# Define internal API auth user
+# Enable protocols
+rtmp:
+  yes: true # Для публикации (ffmpeg / OBS)
+rtsp:
+  yes: false # Отключен, если не нужен для VLC/ffplay
+hls:
+  yes: false # Отключен, если не нужен для Safari/iOS
+
+# WebRTC support
+webrtc:
+  yes: true
+
+# WHIP for WebRTC publishing
+whip:
+  yes: true
+  listenAddress: :8889
+
+# Authentication
 authInternalUsers:
+  # Универсальный пользователь для публикации, чтения и WebRTC
   - user: any
     pass:
-    ips: [] # Allow from any IP
+    ips: []
     permissions:
       - action: publish
       - action: read
       - action: playback
       - action: api
+
+  # Доступ к API и метрикам с localhost
+  - user: any
+    pass:
+    ips: ['127.0.0.1', '::1']
+    permissions:
+      - action: api
+      - action: metrics
+      - action: pprof
 
 # Paths config
 paths:
