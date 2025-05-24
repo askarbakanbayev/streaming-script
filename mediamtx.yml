@@ -10,8 +10,8 @@ whip: yes
 # API
 api: yes
 apiAddress: :9997
-apiUsername: admin
-apiPassword: admin
+apiUsername: ''
+apiPassword: ''
 
 # HLS отключаем
 hls: no
