@@ -19,3 +19,4 @@ paths:
     runOnDemandStartTimeout: 5s
     runOnDemandCloseAfter: 15s
     record: false
+    disablePublisherOverride: yes
