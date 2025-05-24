@@ -1,8 +1,18 @@
 logLevel: info
 
+# Enable API
 api: yes
 apiAddress: :9997
 
+# Define internal API auth user
+authInternalUsers:
+  - user: my_api_user
+    pass: my_api_pass
+    ips: [] # Empty list = allow from any IP
+    permissions:
+      - action: api
+
+# Paths config
 paths:
   all:
     source: publisher
