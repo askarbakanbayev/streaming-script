@@ -26,7 +26,7 @@ services:
 
   rtsp-server:
     platform: linux/amd64
-    image: bluenviron/mediamtx:latest-webrtc
+    image: bluenviron/mediamtx:latest-ffmpeg
     container_name: rtsp-server
     ports:
       - '1935:1935' # RTMP
