@@ -55,23 +55,25 @@ export class StreamsService implements OnModuleDestroy {
 
     ffmpegArgs.push('-f', 'flv', `rtmp://rtsp-server:1935/${id}`);
 
-    console.log(`[🟡] Запуск ffmpeg для потока ${id}`);
-    console.log(`[🔧] Команда: ffmpeg ${ffmpegArgs.join(' ')}`);
-    logStream.write(`[🟡] Запуск ffmpeg: ffmpeg ${ffmpegArgs.join(' ')}\n`);
+    const commandLog = `[🟡] Запуск ffmpeg: ffmpeg ${ffmpegArgs.join(' ')}`;
+    logStream.write(commandLog + '\n');
+    await this.botService.logInfo(`[🟡] Запуск потока *${id}*`);
+    await this.botService.logInfo(commandLog);
 
     const ffmpeg: ChildProcessWithoutNullStreams = spawn('ffmpeg', ffmpegArgs);
 
     ffmpeg.stdout.pipe(logStream);
     ffmpeg.stderr.pipe(logStream);
 
-    // Реальное время — дублируем ошибки в консоль
-    ffmpeg.stderr.on('data', (chunk) => {
+    ffmpeg.stderr.on('data', async (chunk) => {
       const message = chunk.toString();
       if (
         message.toLowerCase().includes('error') ||
         message.toLowerCase().includes('failed')
       ) {
-        console.error(`[FFMPEG][${id}] ${message.trim()}`);
+        const errorMsg = `[FFMPEG][${id}] ${message.trim()}`;
+        console.error(errorMsg);
+        await this.botService.logWarn(errorMsg);
       }
     });
 
@@ -102,7 +104,10 @@ export class StreamsService implements OnModuleDestroy {
 
     ffmpeg.on('spawn', async () => {
       stream.status = 'running';
-      console.log(`[✅] ffmpeg для потока ${stream.name} запущен`);
+      await this.botService.logInfo(
+        `[✅] ffmpeg для потока *${stream.name}* запущен`,
+      );
+
       this.socketsService.emitStreamStatus({
         id: stream.id,
         name: stream.name,
@@ -113,11 +118,10 @@ export class StreamsService implements OnModuleDestroy {
       const ok = await this.streamHealthService.testRtspStream(rtspUrl);
 
       if (!ok) {
-        const errorMessage = `[❌] Поток ${stream.name} не прошёл RTSP-тест.`;
-        console.warn(errorMessage);
+        const errorMessage = `[❌] Поток ${stream.name} не прошёл RTSP-тест`;
+        await this.botService.logError(errorMessage);
         stream.status = 'error';
         stream.process?.kill('SIGINT');
-        await this.botService.broadcastError(errorMessage);
         this.socketsService.emitStreamError({
           id: stream.id,
           name: stream.name,
@@ -127,15 +131,17 @@ export class StreamsService implements OnModuleDestroy {
         return;
       }
 
-      console.log(`[✅] Поток ${stream.name} успешно прошёл RTSP-тест`);
+      await this.botService.logInfo(
+        `[✅] Поток *${stream.name}* успешно прошёл RTSP-тест`,
+      );
     });
 
-    ffmpeg.on('exit', (code, signal) => {
+    ffmpeg.on('exit', async (code, signal) => {
       stream.status = 'error';
       stream.process = null;
       const message = `[❌] ffmpeg exited (code: ${code}, signal: ${signal})`;
-      console.error(message);
       logStream.write(`${message}\n`);
+      await this.botService.logError(message);
       this.socketsService.emitStreamError({
         id: stream.id,
         name: stream.name,
@@ -144,12 +150,12 @@ export class StreamsService implements OnModuleDestroy {
       });
     });
 
-    ffmpeg.on('error', (err) => {
+    ffmpeg.on('error', async (err) => {
       stream.status = 'error';
       stream.process = null;
       const message = `[❌] ffmpeg process error: ${err.message}`;
-      console.error(message);
       logStream.write(`${message}\n`);
+      await this.botService.logError(message);
       this.socketsService.emitStreamError({
         id: stream.id,
         name: stream.name,
@@ -162,14 +168,14 @@ export class StreamsService implements OnModuleDestroy {
     return stream;
   }
 
-  private healthCheckStreams() {
+  private async healthCheckStreams() {
     for (const [id, stream] of this.streams.entries()) {
       if (
         stream.status === 'error' &&
         stream.restartAttempts < this.MAX_RESTART_ATTEMPTS
       ) {
-        const msg = `[↻] Перезапуск потока ${stream.name} (попытка ${stream.restartAttempts + 1})`;
-        console.log(msg);
+        const msg = `[↻] Перезапуск потока *${stream.name}* (попытка ${stream.restartAttempts + 1})`;
+        await this.botService.logWarn(msg);
 
         this.socketsService.emitStreamStatus({
           id: stream.id,

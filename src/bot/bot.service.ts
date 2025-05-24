@@ -28,14 +28,13 @@ export class BotService implements OnModuleInit {
   }
 
   private async setup() {
-    // Обработка /start для всех пользователей — и админов, и обычных
+    // Обработка /start
     this.bot.start((ctx) => {
       ctx.reply(
         `👋 Привет, ${ctx.from.first_name || 'друг'}!\n\n` +
           `Это бот конвертера RTMP → RTSP.\n` +
           `Все технические уведомления будут приходить администраторам.`,
       );
-      // При желании можно сохранять chat.id в базу, чтобы потом рассылать обновления
     });
 
     // Пример команды /stats
@@ -44,22 +43,47 @@ export class BotService implements OnModuleInit {
     });
 
     await this.bot.launch();
-    console.log('Bot started');
+    console.log('🤖 Bot started');
   }
 
   async broadcastError(message: string) {
-    const text = `🚨 *Ошибка конвертера*: ${message}`;
+    await this.logError(`Ошибка конвертера: ${message}`);
+  }
+
+  async logInfo(message: string) {
+    console.log(`ℹ️ ${message}`);
+    await this.sendToAdmins(`ℹ️ *Info:* ${this.escapeMarkdown(message)}`);
+  }
+
+  async logWarn(message: string) {
+    console.warn(`⚠️ ${message}`);
+    await this.sendToAdmins(`⚠️ *Warning:* ${this.escapeMarkdown(message)}`);
+  }
+
+  async logError(message: string) {
+    console.error(`❌ ${message}`);
+    await this.sendToAdmins(`❌ *Error:* ${this.escapeMarkdown(message)}`);
+  }
+
+  private async sendToAdmins(message: string) {
     for (const chatId of this.adminChatIds) {
       try {
-        await this.bot.telegram.sendMessage(chatId, text, {
+        await this.bot.telegram.sendMessage(chatId, message, {
           parse_mode: 'Markdown',
         });
       } catch (err) {
         console.error(
-          `Не удалось отправить сообщение администратору ${chatId}:`,
+          `❗ Не удалось отправить сообщение администратору ${chatId}:`,
           err,
         );
       }
     }
+  }
+
+  /**
+   * Экранируем символы Markdown, чтобы не было ошибок Telegram
+   */
+  private escapeMarkdown(text: string): string {
+    return text.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
   }
 }
