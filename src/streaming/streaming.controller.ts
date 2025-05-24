@@ -187,18 +187,39 @@ a=rtpmap:96 H264/90000`,
           iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
         });
   
+        console.log("[WebRTC] Creating PeerConnection...");
+  
+        pc.onicegatheringstatechange = () => {
+          console.log("[WebRTC] ICE gathering state:", pc.iceGatheringState);
+        };
+  
+        pc.oniceconnectionstatechange = () => {
+          console.log("[WebRTC] ICE connection state:", pc.iceConnectionState);
+        };
+  
+        pc.onsignalingstatechange = () => {
+          console.log("[WebRTC] Signaling state:", pc.signalingState);
+        };
+  
+        pc.ontrack = function(event) {
+          console.log("[WebRTC] 🔗 Track received:", event.track.kind, event.streams);
+          if (event.streams[0]) {
+            video.srcObject = event.streams[0];
+          }
+        };
+  
         pc.addTransceiver("video", { direction: "recvonly" });
         pc.addTransceiver("audio", { direction: "recvonly" });
   
-        pc.ontrack = function(event) {
-          console.log("[WebRTC] 🔗 Track received");
-          video.srcObject = event.streams[0];
-        };
-  
         async function start() {
           try {
+            console.log("[WebRTC] Creating offer...");
             const offer = await pc.createOffer();
+            console.log("[WebRTC] Offer created:");
+            console.log(offer.sdp);
+  
             await pc.setLocalDescription(offer);
+            console.log("[WebRTC] Local description set");
   
             const res = await fetch("http://localhost:8889/whip/${id}", {
               method: "POST",
@@ -214,11 +235,15 @@ a=rtpmap:96 H264/90000`,
             }
   
             const answerSdp = await res.text();
+            console.log("[WebRTC] Received SDP answer:");
+            console.log(answerSdp);
+  
             if (!answerSdp || !answerSdp.startsWith("v=")) {
-              throw new Error("Invalid SDP answer from WHIP server:\n" + answerSdp);
+              throw new Error("Invalid SDP answer from WHIP server:\\n" + answerSdp);
             }
   
             await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+            console.log("[WebRTC] Remote description set successfully");
           } catch (err) {
             console.error("[WebRTC] ❌ WHIP connection failed:", err);
             const errorElem = document.createElement("div");
