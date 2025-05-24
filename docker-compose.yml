@@ -24,8 +24,8 @@ services:
     image: bluenviron/mediamtx:latest
     container_name: rtsp-server
     ports:
-      - '1935:1935' # RTMP ingest
-      - '8554:8554' # RTSP serve
+      - '1935:1935'
+      - '8554:8554'
     volumes:
       - ./mediamtx.yml:/mediamtx.yml:ro
     command: ['/mediamtx.yml']
@@ -78,5 +78,35 @@ services:
       - streamnet
     restart: always
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - '9090:9090'
+    networks:
+      - streamnet
+    restart: always
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - '3030:3000'
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - streamnet
+    restart: always
+
 volumes:
   postgres_data:
+  grafana_data:

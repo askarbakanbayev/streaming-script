@@ -55,10 +55,25 @@ export class StreamsService implements OnModuleDestroy {
 
     ffmpegArgs.push('-f', 'flv', `rtmp://rtsp-server:1935/${id}`);
 
+    console.log(`[🟡] Запуск ffmpeg для потока ${id}`);
+    console.log(`[🔧] Команда: ffmpeg ${ffmpegArgs.join(' ')}`);
+    logStream.write(`[🟡] Запуск ffmpeg: ffmpeg ${ffmpegArgs.join(' ')}\n`);
+
     const ffmpeg: ChildProcessWithoutNullStreams = spawn('ffmpeg', ffmpegArgs);
 
     ffmpeg.stdout.pipe(logStream);
     ffmpeg.stderr.pipe(logStream);
+
+    // Реальное время — дублируем ошибки в консоль
+    ffmpeg.stderr.on('data', (chunk) => {
+      const message = chunk.toString();
+      if (
+        message.toLowerCase().includes('error') ||
+        message.toLowerCase().includes('failed')
+      ) {
+        console.error(`[FFMPEG][${id}] ${message.trim()}`);
+      }
+    });
 
     const stream: StreamEntity = {
       id,
@@ -87,6 +102,7 @@ export class StreamsService implements OnModuleDestroy {
 
     ffmpeg.on('spawn', async () => {
       stream.status = 'running';
+      console.log(`[✅] ffmpeg для потока ${stream.name} запущен`);
       this.socketsService.emitStreamStatus({
         id: stream.id,
         name: stream.name,
@@ -111,27 +127,33 @@ export class StreamsService implements OnModuleDestroy {
         return;
       }
 
-      console.log(`[✅] Поток ${stream.name} прошёл RTSP-тест`);
+      console.log(`[✅] Поток ${stream.name} успешно прошёл RTSP-тест`);
     });
 
-    ffmpeg.on('exit', () => {
+    ffmpeg.on('exit', (code, signal) => {
       stream.status = 'error';
       stream.process = null;
+      const message = `[❌] ffmpeg exited (code: ${code}, signal: ${signal})`;
+      console.error(message);
+      logStream.write(`${message}\n`);
       this.socketsService.emitStreamError({
         id: stream.id,
         name: stream.name,
-        message: `[x] ffmpeg exited unexpectedly`,
+        message,
         timestamp: new Date().toISOString(),
       });
     });
 
-    ffmpeg.on('error', () => {
+    ffmpeg.on('error', (err) => {
       stream.status = 'error';
       stream.process = null;
+      const message = `[❌] ffmpeg process error: ${err.message}`;
+      console.error(message);
+      logStream.write(`${message}\n`);
       this.socketsService.emitStreamError({
         id: stream.id,
         name: stream.name,
-        message: `[x] ffmpeg process error`,
+        message,
         timestamp: new Date().toISOString(),
       });
     });
