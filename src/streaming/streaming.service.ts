@@ -131,6 +131,8 @@ export class StreamsService implements OnModuleDestroy {
         return;
       }
 
+      // test
+
       await this.botService.logInfo(
         `[✅] Поток *${stream.name}* успешно прошёл RTSP-тест`,
       );
