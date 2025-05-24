@@ -162,6 +162,55 @@ a=rtpmap:96 H264/90000`,
     return metadata;
   }
 
+  @Get(':id/webrtc')
+  @ApiOperation({ summary: 'Get WebRTC viewer page for the stream' })
+  @ApiParam({ name: 'id', description: 'Stream ID' })
+  @ApiResponse({ status: 200, description: 'WebRTC playback page HTML' })
+  @ApiResponse({ status: 404, description: 'Stream not found' })
+  getWebRTCPlayer(@Param('id') id: string, @Res() res: Response) {
+    const metadata = this.streamsService.getMetadata(id);
+    if (!metadata) {
+      throw new HttpException('Stream not found', HttpStatus.NOT_FOUND);
+    }
+
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>WebRTC Stream: ${id}</title>
+    </head>
+    <body>
+      <h1>Stream: ${id}</h1>
+      <video id="video" autoplay playsinline controls muted width="720" height="480"></video>
+      <script>
+        const video = document.getElementById("video");
+        const pc = new RTCPeerConnection();
+
+        pc.ontrack = function(event) {
+          video.srcObject = event.streams[0];
+        };
+
+        fetch("http://localhost:8889/stream/${id}/whip", {
+          method: "POST",
+          body: pc.localDescription ? pc.localDescription.sdp : "",
+          headers: { "Content-Type": "application/sdp" }
+        }).then(async res => {
+          const answer = await res.text();
+          pc.setRemoteDescription({ type: "answer", sdp: answer });
+        });
+
+        pc.addTransceiver("video", { direction: "recvonly" });
+        pc.addTransceiver("audio", { direction: "recvonly" });
+        pc.createOffer().then(d => pc.setLocalDescription(d));
+      </script>
+    </body>
+    </html>
+  `;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  }
+
   @Post('send-error')
   @ApiBody({ description: 'Send Error to Telegram body', type: SendErrorDto })
   @ApiOperation({ summary: 'Отправить ошибку в Telegram' })

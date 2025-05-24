@@ -12,7 +12,7 @@ api: yes
 
 # Disable unused protocols
 hls: no
-webrtc: no
+webrtc: yes
 
 # Define path behavior
 paths:
