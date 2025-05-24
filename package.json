@@ -5,6 +5,10 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "main": "dist/cli.js",
+  "bin": {
+    "stream-cli": "dist/cli.js"
+  },
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -14,6 +18,7 @@
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
+    "cli": "ts-node cli.ts",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
@@ -32,6 +37,8 @@
     "@nestjs/websockets": "^11.1.1",
     "@prisma/client": "^6.8.2",
     "class-validator": "^0.14.2",
+    "commander": "^14.0.0",
+    "open": "^10.1.2",
     "prisma": "^6.8.2",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
