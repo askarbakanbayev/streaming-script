@@ -1,33 +1,21 @@
-# mediamtx.yml
-
-# Уровень логирования: info, debug, warn, error
+# Уровень логирования
 logLevel: info
 
-# RTMP-вход (для потоков от ffmpeg, OBS и т.д.)
+# Включаем нужные протоколы
 rtmp: yes
-
-# RTSP-выход (для клиентов типа VLC, ffmpeg и т.д.)
 rtsp: yes
 
-# WebRTC-выход (для браузеров)
-webrtc:
-  enabled: yes
-  listenAddress: :8889
-  iceServers:
-    - urls:
-        - stun:stun.l.google.com:19302
-
-# HTTP API (для мониторинга и отладки)
+# API
 api: yes
 apiAddress: :9997
 
-# Отключаем HLS, если он не нужен
+# HLS отключаем
 hls: no
 
-# Поведение по умолчанию для всех путей
+# Пути
 paths:
   all:
-    source: publisher # источник — ffmpeg или OBS через RTMP
+    source: publisher
     runOnDemandStartTimeout: 5s
     runOnDemandCloseAfter: 15s
     record: false
