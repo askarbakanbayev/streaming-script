@@ -4,7 +4,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { StreamEntity } from './entities/streaming.entity';
 import { StreamSocketsService } from 'src/stream-sockets/stream-sockets.service';
-import { GpsService } from 'src/gps/gps.service';
 import { SnapshotsService } from 'src/snapshots/snapshots.service';
 import { StreamHealthService } from './stream-health.service';
 import { BotService } from 'src/bot/bot.service';
