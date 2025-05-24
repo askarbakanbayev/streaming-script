@@ -4,22 +4,11 @@ logLevel: info
 api: yes
 apiAddress: :9997
 
-# Enable protocols
-rtmp:
-  yes: true # Для публикации (ffmpeg / OBS)
-rtsp:
-  yes: false # Отключен, если не нужен для VLC/ffplay
-hls:
-  yes: false # Отключен, если не нужен для Safari/iOS
-
-# WebRTC support
-webrtc:
-  yes: true
-
-# WHIP for WebRTC publishing
-whip:
-  yes: true
-  listenAddress: :8889
+# Enable protocols (bool values only!)
+rtmp: yes # Для публикации (ffmpeg / OBS)
+rtsp: no # Отключен, если не нужен для VLC/ffplay
+hls: no # Отключен, если не нужен для Safari/iOS
+webrtc: yes # WebRTC просмотр
 
 # Authentication
 authInternalUsers:
