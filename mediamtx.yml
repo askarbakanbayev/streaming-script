@@ -1,20 +1,8 @@
-# mediamtx.yml
-
 logLevel: info
 
-# Включаем нужные протоколы
-rtmp: yes
-rtsp: yes
-whip: yes
-
-# API
 api: yes
 apiAddress: :9997
 
-# HLS отключаем
-hls: no
-
-# Пути
 paths:
   all:
     source: publisher
