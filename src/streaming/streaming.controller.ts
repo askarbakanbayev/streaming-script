@@ -185,32 +185,34 @@ a=rtpmap:96 H264/90000`,
       <script>
         const video = document.getElementById("video");
         const pc = new RTCPeerConnection();
-
+  
+        pc.addTransceiver("video", { direction: "recvonly" });
+        pc.addTransceiver("audio", { direction: "recvonly" });
+  
         pc.ontrack = function(event) {
           video.srcObject = event.streams[0];
         };
-
-        fetch("http://localhost:8889/stream/${id}/whip", {
-          method: "POST",
-          body: pc.localDescription ? pc.localDescription.sdp : "",
-          headers: { "Content-Type": "application/sdp" }
-        }).then(async res => {
-          const answer = await res.text();
-          pc.setRemoteDescription({ type: "answer", sdp: answer });
-        });
-
-        pc.addTransceiver("video", { direction: "recvonly" });
-        pc.addTransceiver("audio", { direction: "recvonly" });
-        pc.createOffer().then(d => pc.setLocalDescription(d));
+  
+        pc.createOffer()
+          .then(offer => pc.setLocalDescription(offer))
+          .then(() => {
+            return fetch("http://localhost:8889/whip/${id}", {
+              method: "POST",
+              body: pc.localDescription.sdp,
+              headers: { "Content-Type": "application/sdp" }
+            });
+          })
+          .then(res => res.text())
+          .then(answer => pc.setRemoteDescription({ type: "answer", sdp: answer }))
+          .catch(console.error);
       </script>
     </body>
     </html>
-  `;
+    `;
 
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
   }
-
   @Post('send-error')
   @ApiBody({ description: 'Send Error to Telegram body', type: SendErrorDto })
   @ApiOperation({ summary: 'Отправить ошибку в Telegram' })
