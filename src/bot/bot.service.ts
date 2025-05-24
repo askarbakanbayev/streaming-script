@@ -47,7 +47,6 @@ export class BotService implements OnModuleInit {
     console.log('Bot started');
   }
 
-  /** Рассылает одно сообщение всем админам */
   async broadcastError(message: string) {
     const text = `🚨 *Ошибка конвертера*: ${message}`;
     for (const chatId of this.adminChatIds) {
