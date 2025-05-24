@@ -51,17 +51,14 @@ export class BotService implements OnModuleInit {
   }
 
   async logInfo(message: string) {
-    console.log(`ℹ️ ${message}`);
     await this.sendToAdmins(`ℹ️ *Info:* ${this.escapeMarkdown(message)}`);
   }
 
   async logWarn(message: string) {
-    console.warn(`⚠️ ${message}`);
     await this.sendToAdmins(`⚠️ *Warning:* ${this.escapeMarkdown(message)}`);
   }
 
   async logError(message: string) {
-    console.error(`❌ ${message}`);
     await this.sendToAdmins(`❌ *Error:* ${this.escapeMarkdown(message)}`);
   }
 
@@ -71,12 +68,7 @@ export class BotService implements OnModuleInit {
         await this.bot.telegram.sendMessage(chatId, message, {
           parse_mode: 'Markdown',
         });
-      } catch (err) {
-        console.error(
-          `❗ Не удалось отправить сообщение администратору ${chatId}:`,
-          err,
-        );
-      }
+      } catch (err) {}
     }
   }
 

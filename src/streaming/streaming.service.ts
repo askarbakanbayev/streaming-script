@@ -28,32 +28,32 @@ export class StreamsService implements OnModuleDestroy {
 
   async startStream(dto: CreateStreamDto): Promise<StreamEntity> {
     const id = dto.name;
-    const rtmpUrl = dto.rtmpUrl;
-    const rtspUrl = `${this.rtspBase}/${id}`;
+
+    // ✅ Используем docker-сетевое имя контейнера, а не localhost
+    const rtspHost = 'rtsp-server'; // внутри docker-сети это имя контейнера
+    const rtspUrl = `rtsp://${rtspHost}:8554/${id}`;
+    const outputRtmpUrl = `rtmp://${rtspHost}:1935/${id}`;
+    const inputSource = dto.rtmpUrl;
     const logPath = path.resolve(`logs/stream-${id}.log`);
     const logStream = fs.createWriteStream(logPath, { flags: 'a' });
 
-    const ffmpegArgs: string[] = ['-re', '-i', rtmpUrl];
+    const ffmpegArgs: string[] = ['-re', '-i', inputSource];
 
     ffmpegArgs.push('-vf', `scale=${dto.resolution ?? '1280:720'}`);
     ffmpegArgs.push('-r', String(dto.fps ?? 30));
     ffmpegArgs.push('-c:v', 'libx264');
-    ffmpegArgs.push('-preset', 'fast');
+    ffmpegArgs.push('-preset', 'veryfast');
+    ffmpegArgs.push('-tune', 'zerolatency');
 
     if (dto.disableAudio) {
       ffmpegArgs.push('-an');
     } else {
       ffmpegArgs.push('-c:a', 'aac');
-      if (dto.audioBitrate) {
-        ffmpegArgs.push('-b:a', dto.audioBitrate);
-      }
+      ffmpegArgs.push('-b:a', dto.audioBitrate ?? '128k');
     }
 
-    if (dto.videoBitrate) {
-      ffmpegArgs.push('-b:v', dto.videoBitrate);
-    }
-
-    ffmpegArgs.push('-f', 'flv', `rtmp://rtsp-server:1935/${id}`);
+    ffmpegArgs.push('-b:v', dto.videoBitrate ?? '2000k');
+    ffmpegArgs.push('-f', 'flv', outputRtmpUrl);
 
     const commandLog = `[🟡] Запуск ffmpeg: ffmpeg ${ffmpegArgs.join(' ')}`;
     logStream.write(commandLog + '\n');
@@ -80,7 +80,7 @@ export class StreamsService implements OnModuleDestroy {
     const stream: StreamEntity = {
       id,
       name: id,
-      rtmpUrl,
+      rtmpUrl: outputRtmpUrl,
       rtspUrl,
       status: 'starting',
       process: ffmpeg,
@@ -92,7 +92,7 @@ export class StreamsService implements OnModuleDestroy {
       data: {
         id,
         name: id,
-        rtmpUrl,
+        rtmpUrl: outputRtmpUrl,
         rtspUrl,
         status: 'starting',
         logPath,
@@ -100,7 +100,7 @@ export class StreamsService implements OnModuleDestroy {
       },
     });
 
-    this.snapshotService.startSnapshots(id, rtspUrl);
+    this.snapshotService.startSnapshots(id, rtspUrl); // ✅ передаём правильный RTSP URL
 
     ffmpeg.on('spawn', async () => {
       stream.status = 'running';

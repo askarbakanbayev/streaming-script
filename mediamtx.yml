@@ -1,20 +1,38 @@
 # Logging level: info, debug, warn, error
 logLevel: info
 
-# Enable RTMP input (for receiving streams from FFmpeg)
+# Enable RTMP input (for receiving streams from FFmpeg, OBS, etc.)
 rtmp: yes
 
-# Enable RTSP output (for clients like VLC, ffplay)
+# Enable RTSP output (for clients like VLC, ffmpeg, etc.)
 rtsp: yes
 
-# Enable the API server for inspecting connections (optional)
-api: yes
-
-# Disable unused protocols
-hls: no
+# Enable WebRTC output (for browser playback, etc.)
 webrtc: yes
 
-# Define path behavior
+# WebRTC settings (important!)
+webrtcSettings:
+  # Listen on this port for WHIP/HTTP signaling
+  listenAddress: :8889
+
+  # Set up STUN servers (optional but recommended)
+  iceServers:
+    - urls:
+        - stun:stun.l.google.com:19302
+
+# Enable HTTP API server for inspecting connections and internal state
+api: yes
+
+# Set API server address (important for healthcheck!)
+apiAddress: :9997
+
+# Disable unused protocols to reduce resource usage
+hls: no
+
+# Global behavior for all paths
 paths:
   all:
-    source: publisher
+    source: publisher # FFmpeg or OBS pushing to rtmp://...
+    runOnDemandStartTimeout: 5s
+    runOnDemandCloseAfter: 15s
+    record: false

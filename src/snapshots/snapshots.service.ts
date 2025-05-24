@@ -15,30 +15,37 @@ export class SnapshotsService implements OnModuleDestroy {
   }
 
   startSnapshots(streamId: string, rtspUrl: string, intervalSec = 10) {
-    const outputPath = path.join(this.snapshotDir, `${streamId}-%03d.jpg`);
+    const outputDir = this.snapshotDir;
+    const outputPath = path.join(outputDir, `${streamId}.jpg`); // один файл
+
+    fs.mkdirSync(outputDir, { recursive: true });
 
     const ffmpeg = spawn('ffmpeg', [
       '-rtsp_transport',
       'tcp',
       '-i',
       rtspUrl,
-      '-r',
-      (1 / intervalSec).toString(),
-      '-f',
-      'image2',
+      '-vf',
+      `fps=1/${intervalSec}`, // 1 кадр в N секунд
       '-q:v',
       '2',
+      '-update',
+      '1', // ✅ правильный флаг: обновлять файл
+      '-f',
+      'image2',
       outputPath,
     ]);
 
     this.snapshotProcesses.set(streamId, ffmpeg);
 
     ffmpeg.stderr.on('data', (data) => {
-      console.log(`[SNAPSHOT:${streamId}] ${data}`);
+      console.log(`[SNAPSHOT:${streamId}] ${data.toString()}`);
     });
 
-    ffmpeg.on('exit', () => {
-      console.log(`[❌] Snapshot process for ${streamId} exited`);
+    ffmpeg.on('exit', (code, signal) => {
+      console.log(
+        `[❌] Snapshot process for ${streamId} exited (code: ${code}, signal: ${signal})`,
+      );
       this.snapshotProcesses.delete(streamId);
     });
 
