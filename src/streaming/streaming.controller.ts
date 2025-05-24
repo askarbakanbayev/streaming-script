@@ -221,7 +221,7 @@ a=rtpmap:96 H264/90000`,
             await pc.setLocalDescription(offer);
             console.log("[WebRTC] Local description set");
   
-            const res = await fetch("http://localhost:8889/whip", {
+            const res = await fetch("http://localhost:8889/${id}", {
               method: "POST",
               body: offer.sdp,
               headers: {
