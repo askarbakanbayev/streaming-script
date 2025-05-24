@@ -6,9 +6,12 @@ apiAddress: :9997
 
 # Enable protocols (bool values only!)
 rtmp: yes # Для публикации (ffmpeg / OBS)
+rtmpAddress: :1935
 rtsp: yes # Отключен, если не нужен для VLC/ffplay
+rtspAddress: :8554
 hls: no # Отключен, если не нужен для Safari/iOS
 webrtc: yes # WebRTC просмотр
+webrtcAddress: :8889
 
 # Authentication
 authInternalUsers:
