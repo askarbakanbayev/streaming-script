@@ -33,40 +33,40 @@ services:
       - streamnet
     restart: always
 
-ffmpeg-simulator:
-  image: jrottenberg/ffmpeg:4.1-alpine
-  container_name: ffmpeg-simulator
-  depends_on:
-    - rtsp-server
-  volumes:
-    - ./videos:/videos
-  command:
-    [
-      '-stream_loop',
-      '-1',
-      '-re',
-      '-i',
-      '/videos/car.mp4',
-      '-c:v',
-      'libx264',
-      '-preset',
-      'veryfast',
-      '-tune',
-      'zerolatency',
-      '-c:a',
-      'aac',
-      '-f',
-      'flv',
-      'rtmp://rtsp-server:1935/stream',
-    ]
-  networks:
-    - streamnet
-  restart: unless-stopped
+  ffmpeg-simulator:
+    image: jrottenberg/ffmpeg:4.1-alpine
+    container_name: ffmpeg-simulator
+    depends_on:
+      - rtsp-server
+    volumes:
+      - ./videos:/videos
+    command:
+      [
+        '-stream_loop',
+        '-1',
+        '-re',
+        '-i',
+        '/videos/car.mp4',
+        '-c:v',
+        'libx264',
+        '-preset',
+        'veryfast',
+        '-tune',
+        'zerolatency',
+        '-c:a',
+        'aac',
+        '-f',
+        'flv',
+        'rtmp://rtsp-server:1935/stream',
+      ]
+    networks:
+      - streamnet
+    restart: unless-stopped
 
   backend:
     build:
       context: .
-      dockerfile: Dockerfile # ваш Node.js на Alpine
+      dockerfile: Dockerfile
     container_name: stream-backend
     ports:
       - '6001:6001'
