@@ -4,6 +4,7 @@ logLevel: info
 # Включаем нужные протоколы
 rtmp: yes
 rtsp: yes
+whip: yes
 
 # API
 api: yes
