@@ -1,21 +1,20 @@
+# Logging level: info, debug, warn, error
 logLevel: info
 
-rtmp:
-  enabled: yes
+# Enable RTMP input (for receiving streams from FFmpeg)
+rtmp: yes
 
-rtsp:
-  enabled: yes
+# Enable RTSP output (for clients like VLC, ffplay)
+rtsp: yes
 
-api:
-  enabled: yes
-  address: :9997
+# Enable the API server for inspecting connections (optional)
+api: yes
 
-hls:
-  enabled: no
+# Disable unused protocols
+hls: no
+webrtc: no
 
-webrtc:
-  enabled: no
-
+# Define path behavior
 paths:
   all:
     source: publisher
