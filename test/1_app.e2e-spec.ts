@@ -1,12 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from './../src/app.module';
+import { App } from 'supertest/types';
+import { AppModule } from '../src/app.module';
 
-describe('SnapshotsController (e2e)', () => {
-  let app: INestApplication;
+describe('AppController (e2e)', () => {
+  let app: INestApplication<App>;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -15,13 +16,10 @@ describe('SnapshotsController (e2e)', () => {
     await app.init();
   });
 
-  it('/snapshots/:id/snapshot (GET)', () => {
+  it('/ (GET)', () => {
     return request(app.getHttpServer())
-      .get('/snapshots/stream/snapshot')
-      .expect(200);
-  });
-
-  afterAll(async () => {
-    await app.close();
+      .get('/')
+      .expect(200)
+      .expect('Hello World!');
   });
 });

@@ -1,24 +1,21 @@
-# Уровень логирования: debug, info, warn, error
 logLevel: info
 
-# Включаем RTMP вход
-rtmp: yes
+rtmp:
+  enabled: yes
 
-# Включаем RTSP выход
-rtsp: yes
+rtsp:
+  enabled: yes
 
-# Включаем HTTP API (для мониторинга активных потоков)
-api: yes
-apiAddress: :9997
+api:
+  enabled: yes
+  address: :9997
 
-# Включаем HTTP сервер (если нужно отдавать .sdp, заглушки и т.д.)
-http: yes
-httpAddress: :8888
+hls:
+  enabled: no
 
-# WebRTC (можно отключить, если не нужно)
-webrtc: no
+webrtc:
+  enabled: no
 
-# Автоматическая публикация всех путей, RTMP → RTSP по тому же пути
 paths:
   all:
     source: publisher
