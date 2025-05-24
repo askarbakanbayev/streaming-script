@@ -6,10 +6,13 @@ apiAddress: :9997
 
 # Define internal API auth user
 authInternalUsers:
-  - user: my_api_user
-    pass: my_api_pass
-    ips: [] # Empty list = allow from any IP
+  - user: any
+    pass:
+    ips: [] # Allow from any IP
     permissions:
+      - action: publish
+      - action: read
+      - action: playback
       - action: api
 
 # Paths config
