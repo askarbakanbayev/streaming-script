@@ -193,18 +193,25 @@ a=rtpmap:96 H264/90000`,
           video.srcObject = event.streams[0];
         };
   
-        pc.createOffer()
-          .then(offer => pc.setLocalDescription(offer))
-          .then(() => {
-            return fetch("http://localhost:8889/whip/${id}", {
+        async function start() {
+          try {
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+  
+            const response = await fetch("http://localhost:8889/whip/${id}", {
               method: "POST",
               body: pc.localDescription.sdp,
               headers: { "Content-Type": "application/sdp" }
             });
-          })
-          .then(res => res.text())
-          .then(answer => pc.setRemoteDescription({ type: "answer", sdp: answer }))
-          .catch(console.error);
+  
+            const answerSdp = await response.text();
+            await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+          } catch (err) {
+            console.error("WebRTC WHIP error:", err);
+          }
+        }
+  
+        start();
       </script>
     </body>
     </html>
@@ -213,6 +220,7 @@ a=rtpmap:96 H264/90000`,
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
   }
+
   @Post('send-error')
   @ApiBody({ description: 'Send Error to Telegram body', type: SendErrorDto })
   @ApiOperation({ summary: 'Отправить ошибку в Telegram' })
