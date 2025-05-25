@@ -67,10 +67,22 @@ export class StreamsService implements OnModuleDestroy {
 
     ffmpeg.stderr.on('data', async (chunk) => {
       const message = chunk.toString();
-      if (
-        message.toLowerCase().includes('error') ||
-        message.toLowerCase().includes('failed')
-      ) {
+
+      // Игнорируем нефатальные ошибки
+      const lower = message.toLowerCase();
+      const ignored = [
+        'muxer', // broken pipe
+        'broken pipe',
+        'error muxing a packet',
+        'failed to update header with correct filesize',
+        'failed to update header with correct duration',
+        'error writing trailer',
+        'conversion failed',
+      ];
+
+      if (ignored.some((substr) => lower.includes(substr))) return;
+
+      if (lower.includes('error') || lower.includes('failed')) {
         const errorMsg = `[FFMPEG][${id}] ${message.trim()}`;
         console.error(errorMsg);
         await this.botService.logWarn(errorMsg);
