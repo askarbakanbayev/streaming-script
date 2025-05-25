@@ -80,11 +80,11 @@ export class StreamsService implements OnModuleDestroy {
       await this.botService.logInfo(
         `[🟢] Поток *${id}* уже активен, начинаем трансляцию...`,
       );
-    }
 
-    await this.botService.logInfo(
-      `[🎉] Поток *${id}* успешно сконвертирован и активен (RTMP → RTSP).`,
-    );
+      await this.botService.logInfo(
+        `[✅] Поток *${id}* успешно сконвертирован и RTMP-поток уже публикуется. Продолжаем RTSP-трансляцию.`,
+      );
+    }
 
     let retries = 5;
     while (retries-- > 0) {

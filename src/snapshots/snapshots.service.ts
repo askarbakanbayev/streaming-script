@@ -15,10 +15,7 @@ export class SnapshotsService implements OnModuleDestroy {
   }
 
   startSnapshots(streamId: string, rtspUrl: string, intervalSec = 10) {
-    const outputDir = this.snapshotDir;
-    const outputPath = path.join(outputDir, `${streamId}.jpg`); // один файл
-
-    fs.mkdirSync(outputDir, { recursive: true });
+    const outputPath = path.join(this.snapshotDir, `${streamId}.jpg`);
 
     const ffmpeg = spawn('ffmpeg', [
       '-rtsp_transport',
@@ -26,11 +23,11 @@ export class SnapshotsService implements OnModuleDestroy {
       '-i',
       rtspUrl,
       '-vf',
-      `fps=1/${intervalSec}`, // 1 кадр в N секунд
+      `fps=1/${intervalSec}`,
       '-q:v',
       '2',
       '-update',
-      '1', // ✅ правильный флаг: обновлять файл
+      '1',
       '-f',
       'image2',
       outputPath,
@@ -70,6 +67,40 @@ export class SnapshotsService implements OnModuleDestroy {
 
     const latest = files.sort().at(-1);
     return latest ? path.join(this.snapshotDir, latest) : null;
+  }
+
+  async generateSnapshot(streamId: string, rtspUrl: string): Promise<string> {
+    const snapshotPath = path.join(this.snapshotDir, `${streamId}.jpg`);
+
+    return new Promise((resolve, reject) => {
+      const ffmpeg = spawn('ffmpeg', [
+        '-y',
+        '-rtsp_transport',
+        'tcp',
+        '-i',
+        rtspUrl,
+        '-frames:v',
+        '1',
+        '-q:v',
+        '2',
+        snapshotPath,
+      ]);
+
+      ffmpeg.on('exit', (code) => {
+        if (code === 0 && fs.existsSync(snapshotPath)) {
+          resolve(snapshotPath);
+        } else {
+          reject(`Snapshot failed for ${streamId}, code: ${code}`);
+        }
+      });
+
+      ffmpeg.stderr.on('data', (chunk) => {
+        const msg = chunk.toString();
+        if (msg.toLowerCase().includes('error')) {
+          console.error(`[Snapshot][${streamId}]`, msg.trim());
+        }
+      });
+    });
   }
 
   onModuleDestroy() {

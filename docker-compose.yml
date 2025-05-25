@@ -95,6 +95,7 @@ services:
     volumes:
       - ./videos:/videos
       - ./logs:/logs
+      - ./snapshots:/app/snapshots # ✅ ВОТ ЭТА СТРОКА
     networks:
       - streamnet
     restart: always

@@ -98,6 +98,7 @@ export class StreamsController {
   @ApiResponse({ status: 404, description: 'Log not found' })
   getLogs(@Param('id') id: string) {
     const log = this.streamsService.getLog(id);
+
     if (!log) {
       throw new HttpException('Log not found', HttpStatus.NOT_FOUND);
     }
@@ -556,11 +557,6 @@ a=rtpmap:96 H264/90000`,
         <div class="container">
           <div class="header">
             <div class="stream-info">
-              <button class="back-button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M19 12H5M12 19l-7-7 7-7"/>
-                </svg>
-              </button>
               <div class="stream-title">
                 ${id}
                 <div class="status-indicator error" id="status-indicator">
@@ -1019,6 +1015,7 @@ a=rtpmap:96 H264/90000`,
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
   }
+
   @Post('send-error')
   @ApiBody({ description: 'Send Error to Telegram body', type: SendErrorDto })
   @ApiOperation({ summary: 'Отправить ошибку в Telegram' })

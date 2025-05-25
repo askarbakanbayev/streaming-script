@@ -39,16 +39,16 @@
     COPY --from=builder /app/prisma ./prisma
     COPY --from=builder /app/dist ./dist
     
-    # Создаём директорию под логи
-    RUN mkdir -p ./logs
+    # Создаём директории под логи и превью
+    RUN mkdir -p ./logs ./snapshots
     
     # Открываем порт приложения
     EXPOSE 6001
     
     # Запуск приложения (с проверкой PostgreSQL)
     CMD sh -c "until nc -z postgres-stream-db 5432; do echo '⏳ Ждём БД...'; sleep 1; done && \
-               echo '✅ DB ready, resetting...' && \
-               npx prisma migrate reset --force --skip-seed && \
-               echo '🚀 Starting app...' && \
-               node dist/src/main.js"
+      echo '✅ DB ready, migrating...' && \
+      npx prisma migrate deploy && \
+      echo '🚀 Starting app...' && \
+      node dist/src/main.js"
     

@@ -23,6 +23,8 @@ model Stream {
   audioBitrate    String?
   disableAudio    Boolean?
   isHealthy       Boolean?  @default(false)
+  previewPath     String?   // 🔥 добавляем путь к превью
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
+
