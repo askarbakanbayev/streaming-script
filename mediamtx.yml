@@ -38,7 +38,7 @@ authInternalUsers:
 paths:
   all:
     source: publisher
-    runOnDemand: ffmpeg -stream_loop -1 -re -i /videos/car.mp4 -c:v libx264 -preset ultrafast -tune zerolatency -c:a aac -f flv rtmp://localhost:1935/${RTSP_PATH}
+    sourceOnDemand: no
     runOnDemandStartTimeout: 5s
     runOnDemandCloseAfter: 15s
     record: false

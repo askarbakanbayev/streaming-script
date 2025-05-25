@@ -7,6 +7,7 @@ export interface StreamEntity {
   rtspUrl: string;
   status: 'starting' | 'running' | 'stopped' | 'error';
   process: any;
+  inputSource: string;
   logPath: string;
   restartAttempts: number;
   startTime?: string;

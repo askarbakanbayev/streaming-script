@@ -34,6 +34,66 @@ export class StreamsService implements OnModuleDestroy {
     const rtspUrl = `rtsp://${rtspHost}:8554/${id}`;
     const outputRtmpUrl = `rtmp://${rtspHost}:1935/${id}`;
     const inputSource = dto.rtmpUrl;
+
+    // 💡 Проверка: существует ли уже входящий поток на rtmp://rtsp-server:1935/${id}
+    const publishingCheck =
+      await this.streamHealthService.isPublishing(outputRtmpUrl);
+
+    const localFilePath = `/videos/${id}.mp4`;
+    const hasLocalFile = fs.existsSync(localFilePath);
+
+    if (!publishingCheck && hasLocalFile) {
+      await this.botService.logInfo(
+        `[🎞] Поток *${id}* не найден, но есть локальный файл — стримим его...`,
+      );
+
+      const startOnDemand = spawn('ffmpeg', [
+        '-re',
+        '-stream_loop',
+        '-1',
+        '-i',
+        localFilePath,
+        '-c:v',
+        'libx264',
+        '-preset',
+        'ultrafast',
+        '-tune',
+        'zerolatency',
+        '-c:a',
+        'aac',
+        '-f',
+        'flv',
+        outputRtmpUrl,
+      ]);
+
+      startOnDemand.stderr.on('data', (chunk) => {
+        const msg = chunk.toString();
+        if (msg.toLowerCase().includes('error')) {
+          console.error('[StartOnDemand]', msg.trim());
+        }
+      });
+    } else if (!publishingCheck && !hasLocalFile) {
+      await this.botService.logInfo(
+        `[🕓] Поток *${id}* неактивен, ждём внешний источник (например, Larix)...`,
+      );
+    } else {
+      await this.botService.logInfo(
+        `[🟢] Поток *${id}* уже активен, начинаем трансляцию...`,
+      );
+    }
+
+    await this.botService.logInfo(
+      `[🎉] Поток *${id}* успешно сконвертирован и активен (RTMP → RTSP).`,
+    );
+
+    let retries = 5;
+    while (retries-- > 0) {
+      const stillPublishing =
+        await this.streamHealthService.isPublishing(outputRtmpUrl);
+      if (stillPublishing) break;
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+
     const logPath = path.resolve(`logs/stream-${id}.log`);
     const logStream = fs.createWriteStream(logPath, { flags: 'a' });
 
@@ -95,6 +155,7 @@ export class StreamsService implements OnModuleDestroy {
       rtmpUrl: outputRtmpUrl,
       rtspUrl,
       status: 'starting',
+      inputSource: dto.rtmpUrl,
       process: ffmpeg,
       logPath,
       restartAttempts: 0,
@@ -127,7 +188,7 @@ export class StreamsService implements OnModuleDestroy {
         timestamp: new Date().toISOString(),
       });
 
-      const ok = await this.streamHealthService.testRtspStream(rtspUrl);
+      const ok = await this.streamHealthService.testRtmpStream(rtspUrl);
 
       if (!ok) {
         const errorMessage = `[❌] Поток ${stream.name} не прошёл RTSP-тест`;
@@ -210,7 +271,7 @@ export class StreamsService implements OnModuleDestroy {
     const newProcess = spawn('ffmpeg', [
       '-re',
       '-i',
-      old.rtmpUrl,
+      old.inputSource,
       '-c:v',
       'copy',
       '-c:a',
