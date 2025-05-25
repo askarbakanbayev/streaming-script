@@ -228,15 +228,6 @@ export class StreamsService implements OnModuleDestroy {
     ffmpeg.on('error', async (err) => {
       stream.status = 'error';
       stream.process = null;
-      const message = `[❌] ffmpeg process error: ${err.message}`;
-      logStream.write(`${message}\n`);
-      await this.botService.logError(message);
-      this.socketsService.emitStreamError({
-        id: stream.id,
-        name: stream.name,
-        message,
-        timestamp: new Date().toISOString(),
-      });
     });
 
     this.streams.set(id, stream);
@@ -249,9 +240,6 @@ export class StreamsService implements OnModuleDestroy {
         stream.status === 'error' &&
         stream.restartAttempts < this.MAX_RESTART_ATTEMPTS
       ) {
-        const msg = `[↻] Перезапуск потока *${stream.name}* (попытка ${stream.restartAttempts + 1})`;
-        await this.botService.logWarn(msg);
-
         this.socketsService.emitStreamStatus({
           id: stream.id,
           name: stream.name,

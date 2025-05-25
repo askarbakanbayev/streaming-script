@@ -463,6 +463,69 @@ a=rtpmap:96 H264/90000`,
             border-bottom: 2px solid var(--primary-color);
           }
   
+          /* Logs section styles */
+          .tab-content {
+            margin-top: 20px;
+          }
+  
+          .tab-pane {
+            display: none;
+          }
+  
+          .tab-pane.active {
+            display: block;
+          }
+  
+          .logs-container {
+            position: relative;
+            margin-top: 20px;
+          }
+  
+          .logs-content {
+            max-height: 400px;
+            overflow: auto;
+            border-radius: 8px;
+            background-color: #1a1a1a;
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #e0e0e0;
+          }
+  
+          .log-line {
+            white-space: pre-wrap;
+            padding: 2px 0;
+          }
+  
+          .live-indicator {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background-color: #FF5722;
+            color: white;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: 500;
+          }
+  
+          /* Metrics tab content */
+          .metrics-container {
+            margin-top: 20px;
+          }
+  
+          .metrics-chart {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary-text);
+          }
+  
           @media (max-width: 768px) {
             .main-content {
               grid-template-columns: 1fr;
@@ -648,6 +711,28 @@ a=rtpmap:96 H264/90000`,
               Metrics
             </div>
           </div>
+  
+          <!-- Tab content -->
+          <div class="tab-content">
+            <!-- Logs tab -->
+            <div id="logs-tab" class="tab-pane active">
+              <div class="logs-container">
+                <div id="logs-content" class="logs-content">
+                  <!-- Logs will be added here dynamically -->
+                </div>
+                <div class="live-indicator">Live</div>
+              </div>
+            </div>
+  
+            <!-- Metrics tab -->
+            <div id="metrics-tab" class="tab-pane">
+              <div class="metrics-container">
+                <div class="metrics-chart">
+                  <p>Metrics visualization will be displayed here</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
   
         <script>
@@ -663,6 +748,72 @@ a=rtpmap:96 H264/90000`,
           const vlcBtn = document.getElementById('vlc-btn');
           const statusValue = document.getElementById('status-value');
           const connectionValue = document.getElementById('connection-value');
+          const logsContent = document.getElementById('logs-content');
+          const logsTab = document.getElementById('logs-tab');
+          const metricsTab = document.getElementById('metrics-tab');
+          
+          // Log messages array
+          const logMessages = [
+            "[ffmpeg] Starting stream processing...",
+            "[ffmpeg] Input #0, rtmp, from 'rtmp://localhost:1935/live/${id}':",
+            "[ffmpeg] Duration: N/A, start: 0.000000, bitrate: N/A",
+            "[ffmpeg] Stream #0:0: Video: h264 (High), yuv420p(progressive), 1920x1080 [SAR 1:1 DAR 16:9], 30 fps, 30 tbr, 1k tbn",
+            "[ffmpeg] Stream #0:1: Audio: aac (LC), 48000 Hz, stereo, fltp",
+            "[ffmpeg] Output #0, rtsp, to 'rtsp://localhost:8554/${id}':",
+            "[ffmpeg] Stream #0:0: Video: h264 (High), yuv420p(progressive), 1920x1080 [SAR 1:1 DAR 16:9], q=2-31, 30 fps, 30 tbr, 90k tbn",
+            "[ffmpeg] Stream #0:1: Audio: aac (LC), 48000 Hz, stereo, fltp",
+            "[ffmpeg] Press [q] to stop, [?] for help",
+            "[ffmpeg] frame=  180 fps= 30 q=-1.0 size=    2048kB time=00:00:06.00 bitrate=2796.4kbits/s speed=1x",
+            "[ffmpeg] frame=  360 fps= 30 q=-1.0 size=    4096kB time=00:00:12.00 bitrate=2796.4kbits/s speed=1x",
+            "[ffmpeg] frame=  540 fps= 30 q=-1.0 size=    6144kB time=00:00:18.00 bitrate=2796.4kbits/s speed=1x",
+            "[ffmpeg] frame=  720 fps= 30 q=-1.0 size=    8192kB time=00:00:24.00 bitrate=2796.4kbits/s speed=1x",
+            "[ffmpeg] frame=  900 fps= 30 q=-1.0 size=   10240kB time=00:00:30.00 bitrate=2796.4kbits/s speed=1x",
+            "[whip] Establishing WebRTC connection...",
+            "[whip] ICE candidate gathering started",
+            "[whip] Local SDP offer created",
+            "[whip] Sending SDP offer to WHIP endpoint",
+            "[whip] Waiting for SDP answer...",
+            "[whip] Error: Empty SDP answer from WHIP server",
+            "[whip] Connection failed. Please retry."
+          ];
+          
+          // Function to add a log message
+          function addLogMessage(message) {
+            const logLine = document.createElement('div');
+            logLine.className = 'log-line';
+            logLine.textContent = message;
+            logsContent.appendChild(logLine);
+            
+            // Auto-scroll to bottom
+            logsContent.scrollTop = logsContent.scrollHeight;
+          }
+          
+          // Initialize logs with initial messages
+          function initLogs() {
+            // Clear existing logs
+            logsContent.innerHTML = '';
+            
+            // Add initial logs (first 7 messages)
+            for (let i = 0; i < 7; i++) {
+              addLogMessage(logMessages[i]);
+            }
+            
+            // Start adding more logs over time
+            let logIndex = 7;
+            const logInterval = setInterval(() => {
+              if (logIndex < logMessages.length) {
+                addLogMessage(logMessages[logIndex]);
+                logIndex++;
+              } else {
+                // Start over with a different pattern once we've shown all logs
+                addLogMessage(logMessages[logIndex % logMessages.length].replace(/\\d+/g, (match) => {
+                  return parseInt(match) + 100;
+                }));
+              }
+            }, 2000);
+            
+            return logInterval;
+          }
           
           // Copy functionality
           document.querySelectorAll('.copy-btn').forEach(button => {
@@ -690,9 +841,19 @@ a=rtpmap:96 H264/90000`,
           // Tab switching functionality
           document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', function() {
+              const tabId = this.getAttribute('data-tab');
+              
+              // Update active tab
               document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
               this.classList.add('active');
-              // Here you would show/hide content based on the selected tab
+              
+              // Update active tab content
+              document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+              if (tabId === 'logs') {
+                logsTab.classList.add('active');
+              } else if (tabId === 'metrics') {
+                metricsTab.classList.add('active');
+              }
             });
           });
   
@@ -709,10 +870,23 @@ a=rtpmap:96 H264/90000`,
               Connecting...
             \`;
             
+            // Add reconnection logs
+            addLogMessage("[whip] Retrying connection...");
+            addLogMessage("[whip] Establishing WebRTC connection...");
+            addLogMessage("[whip] ICE candidate gathering started");
+            
             // Simulate connection attempt
             setTimeout(() => {
-              // For demo purposes, we'll just show the retry button again
-              // In a real implementation, you would attempt to reconnect to the WebRTC stream
+              addLogMessage("[whip] Local SDP offer created");
+              addLogMessage("[whip] Sending SDP offer to WHIP endpoint");
+            }, 1000);
+            
+            setTimeout(() => {
+              addLogMessage("[whip] Waiting for SDP answer...");
+              addLogMessage("[whip] Error: Empty SDP answer from WHIP server");
+              addLogMessage("[whip] Connection failed. Please retry.");
+              
+              // Reset retry button
               this.innerHTML = \`
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 12a9 9 0 0 1-9 9a9 9 0 0 1-9-9a9 9 0 0 1 9-9a9 9 0 0 1 9 9z"/>
@@ -738,6 +912,17 @@ a=rtpmap:96 H264/90000`,
             connectionValue.textContent = 'Online';
             connectionValue.classList.remove('offline');
             connectionValue.classList.add('success');
+            
+            // Add connection success logs
+            addLogMessage("[whip] Retrying connection...");
+            addLogMessage("[whip] Establishing WebRTC connection...");
+            addLogMessage("[whip] ICE candidate gathering started");
+            addLogMessage("[whip] Local SDP offer created");
+            addLogMessage("[whip] Sending SDP offer to WHIP endpoint");
+            addLogMessage("[whip] SDP answer received");
+            addLogMessage("[whip] ICE connection established");
+            addLogMessage("[whip] WebRTC connection successful");
+            addLogMessage("[ffmpeg] Stream is now being transmitted via WebRTC");
           });
           
           // Restart button functionality
@@ -752,6 +937,15 @@ a=rtpmap:96 H264/90000`,
             connectionValue.textContent = 'Offline';
             connectionValue.classList.remove('success');
             connectionValue.classList.add('offline');
+            
+            // Add restart logs
+            addLogMessage("[system] Restarting stream...");
+            addLogMessage("[ffmpeg] Process terminated");
+            addLogMessage("[ffmpeg] Starting stream processing...");
+            addLogMessage("[ffmpeg] Input #0, rtmp, from 'rtmp://localhost:1935/live/${id}':");
+            addLogMessage("[whip] Establishing WebRTC connection...");
+            addLogMessage("[whip] Error: Empty SDP answer from WHIP server");
+            addLogMessage("[whip] Connection failed. Please retry.");
           });
           
           // VLC button functionality
@@ -759,6 +953,7 @@ a=rtpmap:96 H264/90000`,
             // In a real implementation, you would open the stream in VLC
             // For demo purposes, we'll just log a message
             console.log('Opening stream in VLC: rtsp://localhost:8554/' + streamId);
+            addLogMessage("[system] Opening stream in external player (VLC)");
             alert('Opening stream in VLC: rtsp://localhost:8554/' + streamId);
           });
           
@@ -784,6 +979,7 @@ a=rtpmap:96 H264/90000`,
           // Initialize the page
           window.addEventListener('DOMContentLoaded', function() {
             initWebRTC();
+            initLogs();
           });
         </script>
       </body>
@@ -793,7 +989,6 @@ a=rtpmap:96 H264/90000`,
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
   }
-
   @Post('send-error')
   @ApiBody({ description: 'Send Error to Telegram body', type: SendErrorDto })
   @ApiOperation({ summary: 'Отправить ошибку в Telegram' })
