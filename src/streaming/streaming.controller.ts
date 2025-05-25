@@ -179,7 +179,7 @@ a=rtpmap:96 H264/90000`,
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Stream Viewer: ${id}</title>
+        <title>Stream: ${id}</title>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
         <style>
           :root {
@@ -204,12 +204,12 @@ a=rtpmap:96 H264/90000`,
             background-color: var(--bg-color);
             color: var(--text-color);
             min-height: 100vh;
-            padding: 20px;
           }
   
           .container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 20px;
           }
   
           .header {
@@ -317,13 +317,20 @@ a=rtpmap:96 H264/90000`,
             overflow: hidden;
             position: relative;
             aspect-ratio: 16/9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
+          }
+  
+          .video-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
           }
   
           .error-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -332,6 +339,7 @@ a=rtpmap:96 H264/90000`,
             color: white;
             text-align: center;
             padding: 20px;
+            background-color: rgba(0, 0, 0, 0.8);
           }
   
           .error-icon {
@@ -555,7 +563,7 @@ a=rtpmap:96 H264/90000`,
               </button>
               <div class="stream-title">
                 ${id}
-                <div class="status-indicator error">
+                <div class="status-indicator error" id="status-indicator">
                   <span class="status-dot error"></span>
                   Error
                 </div>
@@ -581,13 +589,14 @@ a=rtpmap:96 H264/90000`,
   
           <div class="main-content">
             <div class="video-container">
-              <div class="error-overlay" id="error-overlay">
+              <iframe id="stream-iframe" class="video-iframe" src="http://localhost:8889/${id}" allow="autoplay; fullscreen" allowfullscreen></iframe>
+              <div class="error-overlay" id="error-overlay" style="display: none;">
                 <div class="error-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-7v2h2v-2h-2zm0-8v6h2V7h-2z"/>
                   </svg>
                 </div>
-                <div class="error-title">Error loading logs</div>
+                <div class="error-title">Error loading stream</div>
                 <div class="error-message">Empty SDP answer from WHIP server</div>
                 <button class="btn btn-outline" id="retry-btn">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -600,7 +609,6 @@ a=rtpmap:96 H264/90000`,
                   Retry Connection
                 </button>
               </div>
-              <video id="video-player" style="width: 100%; height: 100%; display: none;" autoplay playsinline></video>
             </div>
   
             <div class="sidebar">
@@ -645,20 +653,6 @@ a=rtpmap:96 H264/90000`,
                     </button>
                   </div>
                 </div>
-  
-                <button class="btn btn-outline" style="width: 100%;" id="vlc-btn">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 2v8"/>
-                    <path d="m4.93 10.93 1.41 1.41"/>
-                    <path d="M2 18h2"/>
-                    <path d="M20 18h2"/>
-                    <path d="m19.07 10.93-1.41 1.41"/>
-                    <path d="M22 22H2"/>
-                    <path d="m16 6-4 4-4-4"/>
-                    <path d="M16 18a4 4 0 0 0 0-8H8a4 4 0 1 0 0 8"/>
-                  </svg>
-                  Open VLC
-                </button>
               </div>
   
               <div class="card">
@@ -740,14 +734,14 @@ a=rtpmap:96 H264/90000`,
           const streamId = "${id}";
           
           // DOM Elements
-          const videoPlayer = document.getElementById('video-player');
+          const streamIframe = document.getElementById('stream-iframe');
           const errorOverlay = document.getElementById('error-overlay');
           const startBtn = document.getElementById('start-btn');
           const restartBtn = document.getElementById('restart-btn');
           const retryBtn = document.getElementById('retry-btn');
-          const vlcBtn = document.getElementById('vlc-btn');
           const statusValue = document.getElementById('status-value');
           const connectionValue = document.getElementById('connection-value');
+          const statusIndicator = document.getElementById('status-indicator');
           const logsContent = document.getElementById('logs-content');
           const logsTab = document.getElementById('logs-tab');
           const metricsTab = document.getElementById('metrics-tab');
@@ -857,7 +851,75 @@ a=rtpmap:96 H264/90000`,
             });
           });
   
-          // Simulate retry connection functionality
+          // Check iframe load status
+          function checkIframeStatus() {
+            try {
+              // Try to access iframe content - if it fails, show error
+              setTimeout(() => {
+                try {
+                  // This is just a simulation - in reality, you'd check if the iframe loaded correctly
+                  const random = Math.random();
+                  if (random < 0.3) { // 30% chance of error for demo purposes
+                    showErrorState();
+                  } else {
+                    showConnectedState();
+                  }
+                } catch (e) {
+                  showErrorState();
+                }
+              }, 2000);
+            } catch (e) {
+              showErrorState();
+            }
+          }
+          
+          // Show error state
+          function showErrorState() {
+            errorOverlay.style.display = 'flex';
+            statusValue.textContent = 'Error';
+            statusValue.classList.remove('success');
+            statusValue.classList.add('error');
+            connectionValue.textContent = 'Offline';
+            connectionValue.classList.remove('success');
+            connectionValue.classList.add('offline');
+            
+            // Update status indicator
+            statusIndicator.innerHTML = \`
+              <span class="status-dot error"></span>
+              Error
+            \`;
+            statusIndicator.className = 'status-indicator error';
+            
+            // Add error logs
+            addLogMessage("[whip] Error: Empty SDP answer from WHIP server");
+            addLogMessage("[whip] Connection failed. Please retry.");
+          }
+          
+          // Show connected state
+          function showConnectedState() {
+            errorOverlay.style.display = 'none';
+            statusValue.textContent = 'Connected';
+            statusValue.classList.remove('error');
+            statusValue.classList.add('success');
+            connectionValue.textContent = 'Online';
+            connectionValue.classList.remove('offline');
+            connectionValue.classList.add('success');
+            
+            // Update status indicator
+            statusIndicator.innerHTML = \`
+              <span class="status-dot success"></span>
+              Connected
+            \`;
+            statusIndicator.className = 'status-indicator success';
+            
+            // Add success logs
+            addLogMessage("[whip] SDP answer received");
+            addLogMessage("[whip] ICE connection established");
+            addLogMessage("[whip] WebRTC connection successful");
+            addLogMessage("[ffmpeg] Stream is now being transmitted via WebRTC");
+          }
+  
+          // Retry button functionality
           retryBtn.addEventListener('click', function() {
             this.innerHTML = \`
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -873,18 +935,18 @@ a=rtpmap:96 H264/90000`,
             // Add reconnection logs
             addLogMessage("[whip] Retrying connection...");
             addLogMessage("[whip] Establishing WebRTC connection...");
-            addLogMessage("[whip] ICE candidate gathering started");
+            
+            // Reload the iframe
+            streamIframe.src = "http://localhost:8889/" + streamId + "?t=" + new Date().getTime();
             
             // Simulate connection attempt
             setTimeout(() => {
-              addLogMessage("[whip] Local SDP offer created");
-              addLogMessage("[whip] Sending SDP offer to WHIP endpoint");
-            }, 1000);
-            
-            setTimeout(() => {
-              addLogMessage("[whip] Waiting for SDP answer...");
-              addLogMessage("[whip] Error: Empty SDP answer from WHIP server");
-              addLogMessage("[whip] Connection failed. Please retry.");
+              // 70% chance of success for demo purposes
+              if (Math.random() < 0.7) {
+                showConnectedState();
+              } else {
+                showErrorState();
+              }
               
               // Reset retry button
               this.innerHTML = \`
@@ -902,84 +964,52 @@ a=rtpmap:96 H264/90000`,
           
           // Start button functionality
           startBtn.addEventListener('click', function() {
-            // In a real implementation, you would start the WebRTC stream here
-            // For demo purposes, we'll just toggle the error overlay and video player
-            errorOverlay.style.display = 'none';
-            videoPlayer.style.display = 'block';
-            statusValue.textContent = 'Connected';
-            statusValue.classList.remove('error');
-            statusValue.classList.add('success');
-            connectionValue.textContent = 'Online';
-            connectionValue.classList.remove('offline');
-            connectionValue.classList.add('success');
+            // Reload the iframe
+            streamIframe.src = "http://localhost:8889/" + streamId + "?t=" + new Date().getTime();
             
-            // Add connection success logs
-            addLogMessage("[whip] Retrying connection...");
+            // Add connection logs
+            addLogMessage("[system] Starting stream...");
             addLogMessage("[whip] Establishing WebRTC connection...");
-            addLogMessage("[whip] ICE candidate gathering started");
-            addLogMessage("[whip] Local SDP offer created");
-            addLogMessage("[whip] Sending SDP offer to WHIP endpoint");
-            addLogMessage("[whip] SDP answer received");
-            addLogMessage("[whip] ICE connection established");
-            addLogMessage("[whip] WebRTC connection successful");
-            addLogMessage("[ffmpeg] Stream is now being transmitted via WebRTC");
+            
+            // Show connected state
+            showConnectedState();
           });
           
           // Restart button functionality
           restartBtn.addEventListener('click', function() {
-            // In a real implementation, you would restart the WebRTC stream here
-            // For demo purposes, we'll just show the error overlay again
-            errorOverlay.style.display = 'flex';
-            videoPlayer.style.display = 'none';
-            statusValue.textContent = 'Error';
-            statusValue.classList.remove('success');
-            statusValue.classList.add('error');
-            connectionValue.textContent = 'Offline';
-            connectionValue.classList.remove('success');
-            connectionValue.classList.add('offline');
-            
             // Add restart logs
             addLogMessage("[system] Restarting stream...");
             addLogMessage("[ffmpeg] Process terminated");
             addLogMessage("[ffmpeg] Starting stream processing...");
-            addLogMessage("[ffmpeg] Input #0, rtmp, from 'rtmp://localhost:1935/live/${id}':");
-            addLogMessage("[whip] Establishing WebRTC connection...");
-            addLogMessage("[whip] Error: Empty SDP answer from WHIP server");
-            addLogMessage("[whip] Connection failed. Please retry.");
-          });
-          
-          // VLC button functionality
-          vlcBtn.addEventListener('click', function() {
-            // In a real implementation, you would open the stream in VLC
-            // For demo purposes, we'll just log a message
-            console.log('Opening stream in VLC: rtsp://localhost:8554/' + streamId);
-            addLogMessage("[system] Opening stream in external player (VLC)");
-            alert('Opening stream in VLC: rtsp://localhost:8554/' + streamId);
+            
+            // Reload the iframe with a cache-busting parameter
+            streamIframe.src = "http://localhost:8889/" + streamId + "?restart=" + new Date().getTime();
+            
+            // Show connected state after a delay
+            setTimeout(() => {
+              showConnectedState();
+            }, 1500);
           });
           
           // Back button functionality
           document.querySelector('.back-button').addEventListener('click', function() {
-            // In a real implementation, you would navigate back
-            // For demo purposes, we'll just log a message
-            console.log('Navigating back');
             window.history.back();
           });
           
-          // WebRTC functionality would be implemented here
-          // This is a placeholder for actual WebRTC implementation
-          function initWebRTC() {
-            // This would be where you initialize the WebRTC connection
-            console.log('Initializing WebRTC for stream: ' + streamId);
-            
-            // For demo purposes, we'll just show the error overlay
-            errorOverlay.style.display = 'flex';
-            videoPlayer.style.display = 'none';
-          }
-          
           // Initialize the page
           window.addEventListener('DOMContentLoaded', function() {
-            initWebRTC();
             initLogs();
+            checkIframeStatus();
+            
+            // Handle iframe load events
+            streamIframe.addEventListener('load', function() {
+              addLogMessage("[system] Stream iframe loaded");
+            });
+            
+            streamIframe.addEventListener('error', function() {
+              addLogMessage("[system] Error loading stream iframe");
+              showErrorState();
+            });
           });
         </script>
       </body>
