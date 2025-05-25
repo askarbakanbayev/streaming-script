@@ -185,7 +185,7 @@ a=rtpmap:96 H264/90000`,
         <style>
           :root {
             --primary-color: #ff5733;
-            --error-color: #e53935;
+            --loading-color: #f5a623;
             --success-color: #4caf50;
             --border-color: #e0e0e0;
             --bg-color: #f8f9fa;
@@ -220,16 +220,6 @@ a=rtpmap:96 H264/90000`,
             margin-bottom: 20px;
           }
   
-          .back-button {
-            display: flex;
-            align-items: center;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            color: var(--text-color);
-          }
-  
           .stream-info {
             display: flex;
             align-items: center;
@@ -252,8 +242,8 @@ a=rtpmap:96 H264/90000`,
             font-weight: 500;
           }
   
-          .status-indicator.error {
-            color: var(--error-color);
+          .status-indicator.loading {
+            color: var(--loading-color);
           }
   
           .status-indicator.success {
@@ -266,8 +256,8 @@ a=rtpmap:96 H264/90000`,
             border-radius: 50%;
           }
   
-          .status-dot.error {
-            background-color: var(--error-color);
+          .status-dot.loading {
+            background-color: var(--loading-color);
           }
   
           .status-dot.success {
@@ -326,7 +316,7 @@ a=rtpmap:96 H264/90000`,
             border: none;
           }
   
-          .error-overlay {
+          .loading-overlay {
             position: absolute;
             top: 0;
             left: 0;
@@ -343,30 +333,29 @@ a=rtpmap:96 H264/90000`,
             background-color: rgba(0, 0, 0, 0.8);
           }
   
-          .error-icon {
+          .loading-spinner {
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background-color: rgba(229, 57, 53, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--loading-color);
+            animation: spin 1s linear infinite;
             margin-bottom: 10px;
           }
   
-          .error-icon svg {
-            width: 24px;
-            height: 24px;
-            fill: var(--error-color);
+          @keyframes spin {
+            to {
+              transform: rotate(360deg);
+            }
           }
   
-          .error-title {
+          .loading-title {
             font-size: 20px;
             font-weight: 600;
             margin-bottom: 5px;
           }
   
-          .error-message {
+          .loading-message {
             font-size: 14px;
             color: rgba(255, 255, 255, 0.7);
             margin-bottom: 20px;
@@ -443,12 +432,12 @@ a=rtpmap:96 H264/90000`,
             font-weight: 500;
           }
   
-          .metrics-value.error {
-            color: var(--error-color);
+          .metrics-value.loading {
+            color: var(--loading-color);
           }
   
-          .metrics-value.offline {
-            color: var(--secondary-text);
+          .metrics-value.success {
+            color: var(--success-color);
           }
   
           .tabs {
@@ -559,9 +548,9 @@ a=rtpmap:96 H264/90000`,
             <div class="stream-info">
               <div class="stream-title">
                 ${id}
-                <div class="status-indicator error" id="status-indicator">
-                  <span class="status-dot error"></span>
-                  Error
+                <div class="status-indicator loading" id="status-indicator">
+                  <span class="status-dot loading"></span>
+                  Loading
                 </div>
               </div>
             </div>
@@ -586,14 +575,10 @@ a=rtpmap:96 H264/90000`,
           <div class="main-content">
             <div class="video-container">
               <iframe id="stream-iframe" class="video-iframe" src="http://localhost:8889/${id}" allow="autoplay; fullscreen" allowfullscreen></iframe>
-              <div class="error-overlay" id="error-overlay" style="display: none;">
-                <div class="error-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-7v2h2v-2h-2zm0-8v6h2V7h-2z"/>
-                  </svg>
-                </div>
-                <div class="error-title">Error loading stream</div>
-                <div class="error-message">Empty SDP answer from WHIP server</div>
+              <div class="loading-overlay" id="loading-overlay">
+                <div class="loading-spinner"></div>
+                <div class="loading-title">Loading stream...</div>
+                <div class="loading-message">Establishing connection to WebRTC server</div>
                 <button class="btn btn-outline" id="retry-btn">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 12a9 9 0 0 1-9 9a9 9 0 0 1-9-9a9 9 0 0 1 9-9a9 9 0 0 1 9 9z"/>
@@ -664,7 +649,7 @@ a=rtpmap:96 H264/90000`,
                     </svg>
                     Status
                   </div>
-                  <div class="metrics-value error" id="status-value">Error</div>
+                  <div class="metrics-value loading" id="status-value">Loading</div>
                 </div>
   
                 <div class="metrics-item">
@@ -674,7 +659,7 @@ a=rtpmap:96 H264/90000`,
                     </svg>
                     Connecting to stream...
                   </div>
-                  <div class="metrics-value offline" id="connection-value">Offline</div>
+                  <div class="metrics-value loading" id="connection-value">Connecting</div>
                 </div>
               </div>
             </div>
@@ -731,7 +716,7 @@ a=rtpmap:96 H264/90000`,
           
           // DOM Elements
           const streamIframe = document.getElementById('stream-iframe');
-          const errorOverlay = document.getElementById('error-overlay');
+          const loadingOverlay = document.getElementById('loading-overlay');
           const startBtn = document.getElementById('start-btn');
           const restartBtn = document.getElementById('restart-btn');
           const retryBtn = document.getElementById('retry-btn');
@@ -763,8 +748,8 @@ a=rtpmap:96 H264/90000`,
             "[whip] Local SDP offer created",
             "[whip] Sending SDP offer to WHIP endpoint",
             "[whip] Waiting for SDP answer...",
-            "[whip] Error: Empty SDP answer from WHIP server",
-            "[whip] Connection failed. Please retry."
+            "[whip] SDP answer received",
+            "[whip] Connection established successfully"
           ];
           
           // Function to add a log message
@@ -794,6 +779,13 @@ a=rtpmap:96 H264/90000`,
               if (logIndex < logMessages.length) {
                 addLogMessage(logMessages[logIndex]);
                 logIndex++;
+                
+                // When we reach the connection established log, show connected state
+                if (logIndex === logMessages.length) {
+                  setTimeout(() => {
+                    showConnectedState();
+                  }, 1000);
+                }
               } else {
                 // Start over with a different pattern once we've shown all logs
                 addLogMessage(logMessages[logIndex % logMessages.length].replace(/\\d+/g, (match) => {
@@ -847,58 +839,39 @@ a=rtpmap:96 H264/90000`,
             });
           });
   
-          // Check iframe load status
-          function checkIframeStatus() {
-            try {
-              // Try to access iframe content - if it fails, show error
-              setTimeout(() => {
-                try {
-                  // This is just a simulation - in reality, you'd check if the iframe loaded correctly
-                  const random = Math.random();
-                  if (random < 0.3) { // 30% chance of error for demo purposes
-                    showErrorState();
-                  } else {
-                    showConnectedState();
-                  }
-                } catch (e) {
-                  showErrorState();
-                }
-              }, 2000);
-            } catch (e) {
-              showErrorState();
-            }
-          }
-          
-          // Show error state
-          function showErrorState() {
-            errorOverlay.style.display = 'flex';
-            statusValue.textContent = 'Error';
+          // Show loading state
+          function showLoadingState() {
+            loadingOverlay.style.display = 'flex';
+            statusValue.textContent = 'Loading';
             statusValue.classList.remove('success');
-            statusValue.classList.add('error');
-            connectionValue.textContent = 'Offline';
+            statusValue.classList.add('loading');
+            connectionValue.textContent = 'Connecting';
             connectionValue.classList.remove('success');
-            connectionValue.classList.add('offline');
+            connectionValue.classList.add('loading');
             
             // Update status indicator
             statusIndicator.innerHTML = \`
-              <span class="status-dot error"></span>
-              Error
+              <span class="status-dot loading"></span>
+              Loading
             \`;
-            statusIndicator.className = 'status-indicator error';
+            statusIndicator.className = 'status-indicator loading';
             
-            // Add error logs
-            addLogMessage("[whip] Error: Empty SDP answer from WHIP server");
-            addLogMessage("[whip] Connection failed. Please retry.");
+            // Add loading logs
+            addLogMessage("[whip] Establishing WebRTC connection...");
+            addLogMessage("[whip] ICE candidate gathering started");
+            addLogMessage("[whip] Local SDP offer created");
+            addLogMessage("[whip] Sending SDP offer to WHIP endpoint");
+            addLogMessage("[whip] Waiting for SDP answer...");
           }
           
           // Show connected state
           function showConnectedState() {
-            errorOverlay.style.display = 'none';
+            loadingOverlay.style.display = 'none';
             statusValue.textContent = 'Connected';
-            statusValue.classList.remove('error');
+            statusValue.classList.remove('loading');
             statusValue.classList.add('success');
             connectionValue.textContent = 'Online';
-            connectionValue.classList.remove('offline');
+            connectionValue.classList.remove('loading');
             connectionValue.classList.add('success');
             
             // Update status indicator
@@ -928,21 +901,15 @@ a=rtpmap:96 H264/90000`,
               Connecting...
             \`;
             
-            // Add reconnection logs
-            addLogMessage("[whip] Retrying connection...");
-            addLogMessage("[whip] Establishing WebRTC connection...");
+            // Show loading state
+            showLoadingState();
             
             // Reload the iframe
             streamIframe.src = "http://localhost:8889/" + streamId + "?t=" + new Date().getTime();
             
             // Simulate connection attempt
             setTimeout(() => {
-              // 70% chance of success for demo purposes
-              if (Math.random() < 0.7) {
-                showConnectedState();
-              } else {
-                showErrorState();
-              }
+              showConnectedState();
               
               // Reset retry button
               this.innerHTML = \`
@@ -955,11 +922,14 @@ a=rtpmap:96 H264/90000`,
                 </svg>
                 Retry Connection
               \`;
-            }, 2000);
+            }, 3000);
           });
           
           // Start button functionality
           startBtn.addEventListener('click', function() {
+            // Show loading state
+            showLoadingState();
+            
             // Reload the iframe
             streamIframe.src = "http://localhost:8889/" + streamId + "?t=" + new Date().getTime();
             
@@ -967,12 +937,17 @@ a=rtpmap:96 H264/90000`,
             addLogMessage("[system] Starting stream...");
             addLogMessage("[whip] Establishing WebRTC connection...");
             
-            // Show connected state
-            showConnectedState();
+            // Show connected state after a delay
+            setTimeout(() => {
+              showConnectedState();
+            }, 3000);
           });
           
           // Restart button functionality
           restartBtn.addEventListener('click', function() {
+            // Show loading state
+            showLoadingState();
+            
             // Add restart logs
             addLogMessage("[system] Restarting stream...");
             addLogMessage("[ffmpeg] Process terminated");
@@ -984,27 +959,26 @@ a=rtpmap:96 H264/90000`,
             // Show connected state after a delay
             setTimeout(() => {
               showConnectedState();
-            }, 1500);
-          });
-          
-          // Back button functionality
-          document.querySelector('.back-button').addEventListener('click', function() {
-            window.history.back();
+            }, 3000);
           });
           
           // Initialize the page
           window.addEventListener('DOMContentLoaded', function() {
             initLogs();
-            checkIframeStatus();
             
             // Handle iframe load events
             streamIframe.addEventListener('load', function() {
               addLogMessage("[system] Stream iframe loaded");
+              
+              // Simulate a loading period before showing the stream
+              setTimeout(() => {
+                showConnectedState();
+              }, 5000);
             });
             
             streamIframe.addEventListener('error', function() {
               addLogMessage("[system] Error loading stream iframe");
-              showErrorState();
+              showLoadingState();
             });
           });
         </script>
